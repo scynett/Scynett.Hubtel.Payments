@@ -80,8 +80,9 @@ public sealed class PendingTransactionsWorker : BackgroundService
 
             try
             {
+                // Use ByHubtelTransactionId since we're querying by Hubtel-generated transaction ID
                 var statusResult = await _statusService.CheckStatusAsync(
-                    new StatusRequest(transactionId),
+                    StatusRequest.ByHubtelTransactionId(transactionId),
                     cancellationToken).ConfigureAwait(false);
 
                 if (statusResult.IsFailure)
@@ -90,15 +91,15 @@ public sealed class PendingTransactionsWorker : BackgroundService
                     continue;
                 }
 
-                var status = statusResult.Value.Status.ToUpperInvariant();
+                var transactionStatus = statusResult.Value.Status.ToUpperInvariant();
 
-                if (status is "SUCCESS" or "SUCCESSFUL" or "FAILED" or "CANCELLED")
+                if (transactionStatus is "SUCCESS" or "SUCCESSFUL" or "FAILED" or "CANCELLED")
                 {
-                    Log.TransactionCompleted(_logger, transactionId, status);
+                    Log.TransactionCompleted(_logger, transactionId, transactionStatus);
 
                     var callbackCommand = new PaymentCallback(
-                        status == "SUCCESS" || status == "SUCCESSFUL" ? "0000" : "9999",
-                        status,
+                        transactionStatus == "SUCCESS" || transactionStatus == "SUCCESSFUL" ? "0000" : "9999",
+                        transactionStatus,
                         transactionId,
                         string.Empty,
                         string.Empty,

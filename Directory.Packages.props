@@ -14,6 +14,9 @@
     <PackageVersion Include="MediatR" Version="12.4.1" />
     <PackageVersion Include="MassTransit" Version="8.3.5" />
     <PackageVersion Include="CSharpFunctionalExtensions" Version="2.44.0" />
+    <!-- Validation -->
+    <PackageVersion Include="FluentValidation" Version="11.11.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <!-- Web -->
     <PackageVersion Include="FastEndpoints" Version="5.33.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenAPI" Version="9.0.0" />

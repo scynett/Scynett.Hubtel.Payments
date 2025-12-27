@@ -1,5 +1,6 @@
 using Scynett.Hubtel.Payments.Common;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
+using Scynett.Hubtel.Payments.Features.ReceiveMoney.InitPayment;
 
 namespace Scynett.Hubtel.Payments.Abstractions;
 

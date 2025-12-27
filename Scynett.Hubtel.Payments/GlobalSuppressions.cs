@@ -12,6 +12,9 @@ using System.Diagnostics.CodeAnalysis;
 // CA1062: IOptions and command parameters are validated by the DI container and framework
 [assembly: SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Parameters are validated by the DI container and framework", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.Features")]
 
+// CA1062: Extension method parameters are validated by the compiler and caller
+[assembly: SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Extension method parameters are guaranteed non-null by the compiler", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.Validation")]
+
 // CA1812: Internal record types used for JSON deserialization are instantiated by System.Text.Json
 [assembly: SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Records are instantiated by System.Text.Json during deserialization", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.Features")]
 

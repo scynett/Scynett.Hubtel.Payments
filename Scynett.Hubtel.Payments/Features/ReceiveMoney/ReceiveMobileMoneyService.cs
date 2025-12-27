@@ -1,38 +1,53 @@
+using FluentValidation;
+
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using Scynett.Hubtel.Payments.Abstractions;
 using Scynett.Hubtel.Payments.Common;
-using Scynett.Hubtel.Payments.Configuration;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
+using Scynett.Hubtel.Payments.Features.ReceiveMoney.InitPayment;
 using Scynett.Hubtel.Payments.Storage;
+using Scynett.Hubtel.Payments.Validation;
 
 using System.Globalization;
 
 namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
-public sealed class ReceiveMobileMoneyService(IReceiveMobileMoneyApi api,
-        IOptions<HubtelSettings> settings,
-        IPendingTransactionsStore pendingStore,
-        ILogger<ReceiveMobileMoneyService> logger) : IReceiveMoneyService
+public sealed class ReceiveMobileMoneyService(
+    IReceiveMobileMoneyApi api,
+    IPendingTransactionsStore pendingStore,
+    ILogger<ReceiveMobileMoneyService> logger,
+    IValidator<InitPaymentRequest> initPaymentValidator,
+    IValidator<PaymentCallback> callbackValidator) : IReceiveMoneyService
 {
     public async Task<Result<InitPaymentResponse>> InitAsync(
         InitPaymentRequest command,
         CancellationToken cancellationToken = default)
     {
+        // Validate input
+        var validationResult = await initPaymentValidator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        if (!validationResult.IsValid)
+        {
+            var error = validationResult.ToError();
+            Log.ErrorInitiatingPayment(logger, new ValidationException(validationResult.Errors), command.CustomerName ?? "Unknown");
+            return Result.Failure<InitPaymentResponse>(error);
+        }
+
         try
         {
-            Log.InitiatingPayment(logger, command.CustomerName, command.Amount, command.Channel);
+            Log.InitiatingPayment(logger, command.CustomerName ?? "Unknown", command.Amount, command.Channel);
 
+            // Note: Validation ensures these are not null/empty, but we use null-forgiving operator
+            // to satisfy the compiler since the validator guarantees these values are present
             var gatewayRequest = new ReceiveMobileMoneyGatewayRequest(
-                CustomerName: command.CustomerName,
-                CustomerMsisdn: command.CustomerMobileNumber,
+                CustomerName: command.CustomerName ?? string.Empty,
+                CustomerMsisdn: command.CustomerMobileNumber, // Mandatory - validated
                 CustomerEmail: string.Empty,
-                Channel: command.Channel,
+                Channel: command.Channel, // Mandatory - validated
                 Amount: command.Amount.ToString("F2", CultureInfo.InvariantCulture),
-                PrimaryCallbackEndpoint: command.PrimaryCallbackEndPoint ?? settings.Value.PrimaryCallbackEndPoint,
-                Description: command.Description,
-                ClientReference: command.ClientReference ?? Guid.NewGuid().ToString());
+                PrimaryCallbackEndpoint: command.PrimaryCallbackEndPoint!, // Mandatory - validated
+                Description: command.Description, // Mandatory - validated
+                ClientReference: command.ClientReference!); // Mandatory - validated
 
             var gatewayResponse = await api
                 .ReceiveMobileMoneyAsync(gatewayRequest, cancellationToken)
@@ -70,7 +85,7 @@ public sealed class ReceiveMobileMoneyService(IReceiveMobileMoneyApi api,
         }
         catch (Exception ex)
         {
-            Log.ErrorInitiatingPayment(logger, ex, command.CustomerName);
+            Log.ErrorInitiatingPayment(logger, ex, command.CustomerName ?? "Unknown");
             return Result.Failure<InitPaymentResponse>(
                 new Error("Payment.InitException", "An error occurred while initiating the payment"));
         }
@@ -80,6 +95,15 @@ public sealed class ReceiveMobileMoneyService(IReceiveMobileMoneyApi api,
         PaymentCallback command,
         CancellationToken cancellationToken = default)
     {
+        // Validate input
+        var validationResult = await callbackValidator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        if (!validationResult.IsValid)
+        {
+            var error = validationResult.ToError();
+            Log.ErrorProcessingCallback(logger, new ValidationException(validationResult.Errors), command.TransactionId);
+            return Result.Failure(error);
+        }
+
         try
         {
             Log.ProcessingCallback(logger, command.TransactionId, command.Status);

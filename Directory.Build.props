@@ -20,12 +20,31 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn> <!-- Missing XML docs -->
 
-    <!-- NuGet packages -->
+    <!-- NuGet Package Metadata -->
     <IsPackable>true</IsPackable>
+    <PackageId>$(AssemblyName)</PackageId>
+    <Authors>Scynett</Authors>
+    <Company>Scynett</Company>
+    <Product>Scynett.Hubtel.Payments</Product>
+    <Description>A modern .NET SDK for Hubtel Mobile Money payment integration with built-in resilience, observability, and production-ready patterns.</Description>
+    <PackageTags>hubtel;payments;ghana;mobile-money;mtn;vodafone;airtel-tigo;sdk;dotnet</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/scynett/Scynett.Hubtel.Payments</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/scynett/Scynett.Hubtel.Payments</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See https://github.com/scynett/Scynett.Hubtel.Payments/releases</PackageReleaseNotes>
+    <Copyright>Copyright (c) $([System.DateTime]::Now.Year) Scynett</Copyright>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <!-- Apply to all projects -->
   <ItemGroup>
     <Using Include="System.Diagnostics.CodeAnalysis" />
+  </ItemGroup>
+
+  <!-- Include README in package -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Condition="Exists('$(MSBuildThisFileDirectory)README.md')" />
   </ItemGroup>
 </Project>

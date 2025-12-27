@@ -46,8 +46,7 @@ public sealed class HubtelStatusService : IHubtelStatusService
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                _logger.LogError("Failed to check status: {StatusCode} - {Error}",
-                    response.StatusCode, errorContent);
+                Log.FailedToCheckStatus(_logger, response.StatusCode, errorContent);
                 return Result.Failure<CheckStatusResponse>(
                     new Error("Status.CheckFailed", $"Failed to check status: {response.StatusCode}"));
             }
@@ -70,7 +69,7 @@ public sealed class HubtelStatusService : IHubtelStatusService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking status for transaction {TransactionId}", query.TransactionId);
+            Log.ErrorCheckingStatus(_logger, ex, query.TransactionId);
             return Result.Failure<CheckStatusResponse>(
                 new Error("Status.Exception", ex.Message));
         }

@@ -4,6 +4,8 @@ namespace Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
 
 public interface IReceiveMobileMoneyApi
 {
-    Task<ReceiveMobileMoneyResponse> ReceiveMobileMoneyAsync(
-    [Body] ReceiveMobileMoneyRequest request);
+    [Post("/receive/mobilemoney")]
+    Task<ReceiveMobileMoneyGatewayResponse> ReceiveMobileMoneyAsync(
+    [Body] ReceiveMobileMoneyGatewayRequest request,
+     CancellationToken cancellationToken = default);
 }

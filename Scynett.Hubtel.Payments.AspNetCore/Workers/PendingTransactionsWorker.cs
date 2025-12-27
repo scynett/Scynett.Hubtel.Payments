@@ -30,7 +30,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Pending Transactions Worker started");
+        Log.WorkerStarted(_logger);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -40,12 +40,11 @@ public sealed class PendingTransactionsWorker : BackgroundService
             }
             catch (OperationCanceledException)
             {
-                // Expected when cancellation is requested
                 break;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while checking pending transactions");
+                Log.ErrorCheckingPendingTransactions(_logger, ex);
             }
 
             try
@@ -54,12 +53,11 @@ public sealed class PendingTransactionsWorker : BackgroundService
             }
             catch (OperationCanceledException)
             {
-                // Expected when cancellation is requested
                 break;
             }
         }
 
-        _logger.LogInformation("Pending Transactions Worker stopped");
+        Log.WorkerStopped(_logger);
     }
 
     private async Task CheckPendingTransactionsAsync(CancellationToken cancellationToken)
@@ -69,11 +67,11 @@ public sealed class PendingTransactionsWorker : BackgroundService
 
         if (transactionList.Count == 0)
         {
-            _logger.LogDebug("No pending transactions to check");
+            Log.NoPendingTransactions(_logger);
             return;
         }
 
-        _logger.LogInformation("Checking {Count} pending transactions", transactionList.Count);
+        Log.CheckingPendingTransactions(_logger, transactionList.Count);
 
         foreach (var transactionId in transactionList)
         {
@@ -88,9 +86,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
 
                 if (statusResult.IsFailure)
                 {
-                    _logger.LogWarning(
-                        "Failed to check status for transaction {TransactionId}: {Error}",
-                        transactionId, statusResult.Error.Message);
+                    Log.FailedToCheckTransactionStatus(_logger, transactionId, statusResult.Error.Message);
                     continue;
                 }
 
@@ -98,9 +94,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
 
                 if (status is "SUCCESS" or "SUCCESSFUL" or "FAILED" or "CANCELLED")
                 {
-                    _logger.LogInformation(
-                        "Transaction {TransactionId} completed with status: {Status}",
-                        transactionId, status);
+                    Log.TransactionCompleted(_logger, transactionId, status);
 
                     var callbackCommand = new PaymentCallback(
                         status == "SUCCESS" || status == "SUCCESSFUL" ? "0000" : "9999",
@@ -118,12 +112,11 @@ public sealed class PendingTransactionsWorker : BackgroundService
             }
             catch (OperationCanceledException)
             {
-                // Expected when cancellation is requested
                 break;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking transaction {TransactionId}", transactionId);
+                Log.ErrorCheckingTransaction(_logger, ex, transactionId);
             }
         }
     }

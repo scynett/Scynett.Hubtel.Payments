@@ -25,13 +25,11 @@ public static class HubtelCallbackEndpoints
         IReceiveMoneyService receiveMoneyService,
         ILogger<IReceiveMoneyService> logger)
     {
-        logger.LogInformation(
-            "Received Hubtel callback for transaction {TransactionId}",
-            request.Data?.TransactionId);
+        Log.ReceivedCallback(logger, request.Data?.TransactionId);
 
         if (request.Data == null)
         {
-            logger.LogWarning("Received callback with null data");
+            Log.ReceivedCallbackWithNullData(logger);
             return Results.BadRequest(new { error = "Invalid callback data" });
         }
 
@@ -50,7 +48,7 @@ public static class HubtelCallbackEndpoints
 
         if (result.IsFailure)
         {
-            logger.LogError("Failed to process callback: {Error}", result.Error.Message);
+            Log.FailedToProcessCallback(logger, result.Error.Message);
             return Results.Ok(new { status = "received", message = "Callback logged but processing failed" });
         }
 

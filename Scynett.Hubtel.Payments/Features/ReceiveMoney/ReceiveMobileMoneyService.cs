@@ -11,64 +11,46 @@ using System.Globalization;
 
 namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
-public sealed class ReceiveMoneyService : IReceiveMoneyService
-{
-    private readonly IReceiveMobileMoneyApi _api;
-    private readonly HubtelSettings _settings;
-    private readonly IPendingTransactionsStore _pendingStore;
-    private readonly ILogger<ReceiveMoneyService> _logger;
-
-    public ReceiveMoneyService(
-        IReceiveMobileMoneyApi api,
+public sealed class ReceiveMobileMoneyService(IReceiveMobileMoneyApi api,
         IOptions<HubtelSettings> settings,
         IPendingTransactionsStore pendingStore,
-        ILogger<ReceiveMoneyService> logger)
-    {
-        _api = api;
-        _settings = settings.Value;
-        _pendingStore = pendingStore;
-        _logger = logger;
-    }
-
+        ILogger<ReceiveMobileMoneyService> logger) : IReceiveMoneyService
+{
     public async Task<Result<InitPaymentResponse>> InitAsync(
         InitPaymentRequest command,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            _logger.LogInformation(
-                "Initiating payment for {CustomerName} - Amount: {Amount}, Channel: {Channel}",
-                command.CustomerName, command.Amount, command.Channel);
+            Log.InitiatingPayment(logger, command.CustomerName, command.Amount, command.Channel);
 
-            var gatewayRequest = new ReceiveMobileMoneyRequest(
+            var gatewayRequest = new ReceiveMobileMoneyGatewayRequest(
                 CustomerName: command.CustomerName,
                 CustomerMsisdn: command.CustomerMobileNumber,
                 CustomerEmail: string.Empty,
                 Channel: command.Channel,
                 Amount: command.Amount.ToString("F2", CultureInfo.InvariantCulture),
-                PrimaryCallbackEndpoint: command.PrimaryCallbackEndPoint ?? _settings.PrimaryCallbackEndPoint,
+                PrimaryCallbackEndpoint: command.PrimaryCallbackEndPoint ?? settings.Value.PrimaryCallbackEndPoint,
                 Description: command.Description,
                 ClientReference: command.ClientReference ?? Guid.NewGuid().ToString());
 
-            var gatewayResponse = await _api
-                .ReceiveMobileMoneyAsync(gatewayRequest)
+            var gatewayResponse = await api
+                .ReceiveMobileMoneyAsync(gatewayRequest, cancellationToken)
                 .ConfigureAwait(false);
 
             var decision = HubtelResponseDecisionFactory.Create(
                 gatewayResponse.ResponseCode,
                 gatewayResponse.Message);
 
-            _logger.LogInformation(
-                "Payment init response - Code: {Code}, Category: {Category}, Message: {Message}",
-                decision.Code, decision.Category, decision.CustomerMessage);
+            Log.PaymentInitResponse(logger, decision.Code, decision.Category, decision.CustomerMessage ?? string.Empty);
 
             if (decision.Category == ResponseCategory.Pending)
             {
                 var transactionId = gatewayResponse.Data?.TransactionId ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(transactionId))
                 {
-                    await _pendingStore.AddAsync(transactionId, cancellationToken).ConfigureAwait(false);
-                    _logger.LogInformation("Transaction {TransactionId} added to pending store", transactionId);
+                    await pendingStore.AddAsync(transactionId, cancellationToken).ConfigureAwait(false);
+                    Log.TransactionAddedToPendingStore(logger, transactionId);
                 }
             }
 
@@ -88,7 +70,7 @@ public sealed class ReceiveMoneyService : IReceiveMoneyService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error initiating payment for {CustomerName}", command.CustomerName);
+            Log.ErrorInitiatingPayment(logger, ex, command.CustomerName);
             return Result.Failure<InitPaymentResponse>(
                 new Error("Payment.InitException", "An error occurred while initiating the payment"));
         }
@@ -100,31 +82,25 @@ public sealed class ReceiveMoneyService : IReceiveMoneyService
     {
         try
         {
-            _logger.LogInformation(
-                "Processing callback for transaction {TransactionId} - Status: {Status}",
-                command.TransactionId, command.Status);
+            Log.ProcessingCallback(logger, command.TransactionId, command.Status);
 
             var decision = HubtelResponseDecisionFactory.Create(
                 command.ResponseCode,
                 command.Status);
 
-            _logger.LogInformation(
-                "Callback decision - Code: {Code}, Category: {Category}, IsFinal: {IsFinal}",
-                decision.Code, decision.Category, decision.IsFinal);
+            Log.CallbackDecision(logger, decision.Code, decision.Category, decision.IsFinal);
 
             if (decision.IsFinal)
             {
-                await _pendingStore.RemoveAsync(command.TransactionId, cancellationToken).ConfigureAwait(false);
-                _logger.LogInformation(
-                    "Transaction {TransactionId} removed from pending store",
-                    command.TransactionId);
+                await pendingStore.RemoveAsync(command.TransactionId, cancellationToken).ConfigureAwait(false);
+                Log.TransactionRemovedFromPendingStore(logger, command.TransactionId);
             }
 
             return Result.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing callback for transaction {TransactionId}", command.TransactionId);
+            Log.ErrorProcessingCallback(logger, ex, command.TransactionId);
             return Result.Failure(
                 new Error("Payment.CallbackException", "An error occurred while processing the callback"));
         }

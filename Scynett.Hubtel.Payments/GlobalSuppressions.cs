@@ -6,9 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 // CA1056: BaseUrl is stored as string for flexibility and serialization
 [assembly: SuppressMessage("Design", "CA1056:URI properties should not be strings", Justification = "BaseUrl is stored as string for configuration flexibility", Scope = "member", Target = "~P:Scynett.Hubtel.Payments.Configuration.HubtelSettings.BaseUrl")]
 
-// CA1848: For simple logging scenarios, LoggerExtensions methods are acceptable
-[assembly: SuppressMessage("Performance", "CA1848:Use the LoggerMessage delegates", Justification = "LoggerExtensions are acceptable for simple logging scenarios", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments")]
-
 // CA1031: Catching general exceptions at service boundaries is acceptable for logging and graceful failure
 [assembly: SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Service boundary methods catch all exceptions for logging and graceful failure", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.Features")]
 

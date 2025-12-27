@@ -1,5 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
+
+using Polly;
 
 using Refit;
 
@@ -8,6 +11,7 @@ using Scynett.Hubtel.Payments.Configuration;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
 
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -17,21 +21,50 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddHubtelPaymentsCore(this IServiceCollection services)
     {
-        // Gateway layer - Refit API client for ReceiveMoney
+        // Gateway layer - Refit API client for ReceiveMoney with resilience
         services.AddRefitClient<IReceiveMobileMoneyApi>()
             .ConfigureHttpClient((sp, client) =>
             {
                 var options = sp.GetRequiredService<IOptions<HubtelSettings>>().Value;
                 client.BaseAddress = new Uri(options.BaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-                
+
                 var authValue = Convert.ToBase64String(
                     Encoding.ASCII.GetBytes($"{options.ClientId}:{options.ClientSecret}"));
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authValue);
+            })
+            .AddStandardResilienceHandler(resilienceOptions =>
+            {
+                // Retry configuration with sensible defaults
+                // Users can override via HubtelSettings.Resilience in appsettings.json
+                resilienceOptions.Retry.MaxRetryAttempts = 3;
+                resilienceOptions.Retry.BackoffType = DelayBackoffType.Exponential;
+                resilienceOptions.Retry.Delay = TimeSpan.FromSeconds(1);
+                resilienceOptions.Retry.UseJitter = true;
+                resilienceOptions.Retry.ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .HandleResult(response =>
+                        response.StatusCode == HttpStatusCode.RequestTimeout ||
+                        response.StatusCode == HttpStatusCode.TooManyRequests ||
+                        (int)response.StatusCode >= 500)
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutException>();
+
+                // Circuit breaker configuration
+                resilienceOptions.CircuitBreaker.MinimumThroughput = 10;
+                resilienceOptions.CircuitBreaker.FailureRatio = 0.5;
+                resilienceOptions.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+                resilienceOptions.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+                resilienceOptions.CircuitBreaker.ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .HandleResult(response => (int)response.StatusCode >= 500)
+                    .Handle<HttpRequestException>();
+
+                // Timeout configuration
+                resilienceOptions.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+                resilienceOptions.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
             });
 
         // Public API layer - Orchestration service
-        services.AddScoped<IReceiveMoneyService, ReceiveMoneyService>();
+        services.AddScoped<IReceiveMoneyService, ReceiveMobileMoneyService>();
 
         return services;
     }

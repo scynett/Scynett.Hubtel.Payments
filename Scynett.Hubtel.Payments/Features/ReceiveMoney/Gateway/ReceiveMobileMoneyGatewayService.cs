@@ -14,14 +14,14 @@ namespace Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
 4101 → business/auth/scopes/POS issues
 4103 → permission/channel not allowed
  */
-public sealed class ReceiveMobileMoneyService(
+public sealed class ReceiveMobileMoneyGatewayService(
    IOptions<HubtelSettings> options,
     IReceiveMobileMoneyApi api) : IReceiveMobileMoneyService
 {
-    public async Task<ReceiveMobileMoneyResponse> InitiateReceiveMoney(ReceiveMobileMoneyRequest request, CancellationToken ct)
+    public async Task<ReceiveMobileMoneyGatewayResponse> InitiateReceiveMoney(ReceiveMobileMoneyGatewayRequest request, CancellationToken cancellationToken = default)
     {
        return await api.ReceiveMobileMoneyAsync(
-            new ReceiveMobileMoneyRequest(
+            new ReceiveMobileMoneyGatewayRequest(
                request.CustomerName,
                request.CustomerMsisdn,
                request.CustomerEmail,
@@ -29,7 +29,8 @@ public sealed class ReceiveMobileMoneyService(
                request.Amount,
                options.Value.PrimaryCallbackEndPoint,
                request.Description,
-               Guid.NewGuid().ToString())).ConfigureAwait(false);
+               Guid.NewGuid().ToString()), 
+            cancellationToken).ConfigureAwait(false);
 
     }
 }

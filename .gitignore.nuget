@@ -1,0 +1,9 @@
+# NuGet package output
+*.nupkg
+*.snupkg
+artifacts/
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml

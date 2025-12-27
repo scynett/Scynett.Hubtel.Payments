@@ -1,6 +1,6 @@
 ﻿namespace Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
 
-public sealed record ReceiveMobileMoneyRequest(
+public sealed record ReceiveMobileMoneyGatewayRequest(
     string CustomerName,
     string CustomerMsisdn,
     string CustomerEmail,

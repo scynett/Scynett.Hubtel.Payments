@@ -9,5 +9,5 @@ public class HubtelSettings
     public string MerchantAccountNumber { get; set; } = string.Empty;
     public string BaseUrl { get; set; } = "https://api.hubtel.com";
     public int TimeoutSeconds { get; set; } = 30;
-    public string PrimaryCallbackEndPoint { get; internal set; }
+    public string PrimaryCallbackEndPoint { get; set; } = string.Empty;
 }

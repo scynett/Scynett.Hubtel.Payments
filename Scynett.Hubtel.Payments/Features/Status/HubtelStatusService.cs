@@ -1,10 +1,13 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+using Scynett.Hubtel.Payments.Abstractions;
+using Scynett.Hubtel.Payments.Common;
+using Scynett.Hubtel.Payments.Configuration;
+
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Scynett.Hubtel.Payments.Common;
-using Scynett.Hubtel.Payments.Configuration;
 
 namespace Scynett.Hubtel.Payments.Features.Status;
 
@@ -25,7 +28,7 @@ public sealed class HubtelStatusService : IHubtelStatusService
     }
 
     public async Task<Result<CheckStatusResponse>> CheckStatusAsync(
-        CheckStatusQuery query,
+        StatusRequest query,
         CancellationToken cancellationToken = default)
     {
         try

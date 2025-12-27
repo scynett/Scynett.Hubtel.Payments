@@ -1,6 +1,6 @@
 namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
-public sealed record InitReceiveMobileMoneyCommand(
+public sealed record InitPaymentRequest(
     string CustomerName,
     string CustomerMobileNumber,
     string Channel,

@@ -1,6 +1,6 @@
 namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
-public sealed record ReceiveMoneyCallbackCommand(
+public sealed record PaymentCallback(
     string ResponseCode,
     string Status,
     string TransactionId,

@@ -1,6 +1,6 @@
 namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
-public sealed record InitReceiveMoneyResponse(
+public sealed record InitPaymentResponse(
     string TransactionId,
     string CheckoutId,
     string Status,

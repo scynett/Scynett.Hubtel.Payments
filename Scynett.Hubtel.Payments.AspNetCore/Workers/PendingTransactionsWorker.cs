@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using Scynett.Hubtel.Payments.Abstractions;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
 using Scynett.Hubtel.Payments.Features.Status;
 using Scynett.Hubtel.Payments.Storage;
@@ -81,7 +83,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
             try
             {
                 var statusResult = await _statusService.CheckStatusAsync(
-                    new CheckStatusQuery(transactionId),
+                    new StatusRequest(transactionId),
                     cancellationToken).ConfigureAwait(false);
 
                 if (statusResult.IsFailure)
@@ -100,7 +102,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
                         "Transaction {TransactionId} completed with status: {Status}",
                         transactionId, status);
 
-                    var callbackCommand = new ReceiveMoneyCallbackCommand(
+                    var callbackCommand = new PaymentCallback(
                         status == "SUCCESS" || status == "SUCCESSFUL" ? "0000" : "9999",
                         status,
                         transactionId,

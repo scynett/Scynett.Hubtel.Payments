@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+
+using Scynett.Hubtel.Payments.Abstractions;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.Endpoints;
@@ -33,7 +35,7 @@ public static class HubtelCallbackEndpoints
             return Results.BadRequest(new { error = "Invalid callback data" });
         }
 
-        var command = new ReceiveMoneyCallbackCommand(
+        var command = new PaymentCallback(
             request.ResponseCode ?? string.Empty,
             request.Data.Status ?? string.Empty,
             request.Data.TransactionId ?? string.Empty,

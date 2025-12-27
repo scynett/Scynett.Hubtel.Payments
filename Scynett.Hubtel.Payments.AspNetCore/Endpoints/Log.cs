@@ -24,7 +24,15 @@ internal static partial class Log
         EventId = HubtelEventIds.CallbackError,
         Level = LogLevel.Error,
         Message = "Failed to process callback: {error}")]
-    internal static partial void FailedToProcessCallback(
+    internal static partial void CallbackProcessingFailed(
         ILogger logger,
         string error);
+
+    [LoggerMessage(
+        EventId = HubtelEventIds.CallbackProcessed,
+        Level = LogLevel.Information,
+        Message = "Successfully processed callback for transaction {transactionId}")]
+    internal static partial void CallbackProcessedSuccessfully(
+        ILogger logger,
+        string? transactionId);
 }

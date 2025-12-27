@@ -11,20 +11,20 @@ namespace Scynett.Hubtel.Payments.AspNetCore.Workers;
 public sealed class PendingTransactionsWorker : BackgroundService
 {
     private readonly IPendingTransactionsStore _pendingStore;
-    private readonly IHubtelStatusService _statusService;
-    private readonly IReceiveMoneyService _receiveMoneyService;
+    private readonly ITransactionStatusProcessor _statusProcessor;
+    private readonly IReceiveMoneyProcessor _receiveMoneyProcessor;
     private readonly ILogger<PendingTransactionsWorker> _logger;
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(5);
 
     public PendingTransactionsWorker(
         IPendingTransactionsStore pendingStore,
-        IHubtelStatusService statusService,
-        IReceiveMoneyService receiveMoneyService,
+        ITransactionStatusProcessor statusProcessor,
+        IReceiveMoneyProcessor receiveMoneyProcessor,
         ILogger<PendingTransactionsWorker> logger)
     {
         _pendingStore = pendingStore;
-        _statusService = statusService;
-        _receiveMoneyService = receiveMoneyService;
+        _statusProcessor = statusProcessor;
+        _receiveMoneyProcessor = receiveMoneyProcessor;
         _logger = logger;
     }
 
@@ -81,7 +81,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
             try
             {
                 // Use ByHubtelTransactionId since we're querying by Hubtel-generated transaction ID
-                var statusResult = await _statusService.CheckStatusAsync(
+                var statusResult = await _statusProcessor.CheckStatusAsync(
                     StatusRequest.ByHubtelTransactionId(transactionId),
                     cancellationToken).ConfigureAwait(false);
 
@@ -108,7 +108,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
                         statusResult.Value.Charges,
                         statusResult.Value.CustomerMobileNumber);
 
-                    await _receiveMoneyService.ProcessCallbackAsync(callbackCommand, cancellationToken).ConfigureAwait(false);
+                    await _receiveMoneyProcessor.ProcessCallbackAsync(callbackCommand, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)

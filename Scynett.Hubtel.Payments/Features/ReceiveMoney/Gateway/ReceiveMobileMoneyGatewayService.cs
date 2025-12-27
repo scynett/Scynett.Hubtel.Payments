@@ -15,7 +15,7 @@ namespace Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
 4103 → permission/channel not allowed
  */
 public sealed class ReceiveMobileMoneyGatewayService(
-   IOptions<HubtelSettings> options,
+   IOptions<HubtelOptions> options,
     IReceiveMobileMoneyApi api) : IReceiveMobileMoneyService
 {
     public async Task<ReceiveMobileMoneyGatewayResponse> InitiateReceiveMoney(ReceiveMobileMoneyGatewayRequest request, CancellationToken cancellationToken = default)

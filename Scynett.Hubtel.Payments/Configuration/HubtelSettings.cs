@@ -1,19 +1,54 @@
 namespace Scynett.Hubtel.Payments.Configuration;
 
-public class HubtelSettings
+/// <summary>
+/// Configuration options for Hubtel Mobile Money API integration.
+/// </summary>
+public class HubtelOptions
 {
+    /// <summary>
+    /// Configuration section name in appsettings.json.
+    /// </summary>
     public const string SectionName = "Hubtel";
 
+    /// <summary>
+    /// Hubtel API Client ID for authentication.
+    /// </summary>
     public string ClientId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Hubtel API Client Secret for authentication.
+    /// </summary>
     public string ClientSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Merchant account number (POS Sales ID) from Hubtel.
+    /// </summary>
     public string MerchantAccountNumber { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Base URL for Hubtel API endpoints.
+    /// </summary>
     public string BaseUrl { get; set; } = "https://api.hubtel.com";
+
+    /// <summary>
+    /// HTTP client timeout in seconds.
+    /// </summary>
     public int TimeoutSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Default callback endpoint for payment notifications.
+    /// </summary>
     public string PrimaryCallbackEndPoint { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Resilience settings for HTTP retries and circuit breaker.
+    /// </summary>
     public ResilienceSettings Resilience { get; set; } = new();
 }
 
+/// <summary>
+/// Configuration for resilience policies (retry, circuit breaker, timeout).
+/// </summary>
 public class ResilienceSettings
 {
     /// <summary>

@@ -14,16 +14,16 @@ using System.Text;
 
 namespace Scynett.Hubtel.Payments.Features.Status;
 
-public sealed class HubtelStatusService : IHubtelStatusService
+public sealed class HubtelStatusService : ITransactionStatusProcessor
 {
     private readonly HttpClient _httpClient;
-    private readonly HubtelSettings _options;
+    private readonly HubtelOptions _options;
     private readonly ILogger<HubtelStatusService> _logger;
     private readonly IValidator<StatusRequest> _validator;
 
     public HubtelStatusService(
         HttpClient httpClient,
-        IOptions<HubtelSettings> options,
+        IOptions<HubtelOptions> options,
         ILogger<HubtelStatusService> logger,
         IValidator<StatusRequest> validator)
     {

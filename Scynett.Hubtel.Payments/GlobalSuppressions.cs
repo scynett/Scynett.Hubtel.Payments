@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Error is a domain-specific type name following the Result pattern", Scope = "type", Target = "~T:Scynett.Hubtel.Payments.Common.Error")]
 
 // CA1056: BaseUrl is stored as string for flexibility and serialization
-[assembly: SuppressMessage("Design", "CA1056:URI properties should not be strings", Justification = "BaseUrl is stored as string for configuration flexibility", Scope = "member", Target = "~P:Scynett.Hubtel.Payments.Configuration.HubtelSettings.BaseUrl")]
+[assembly: SuppressMessage("Design", "CA1056:URI properties should not be strings", Justification = "BaseUrl is stored as string for configuration flexibility", Scope = "member", Target = "~P:Scynett.Hubtel.Payments.Configuration.HubtelOptions.BaseUrl")]
 
 // CA1031: Catching general exceptions at service boundaries is acceptable for logging and graceful failure
 [assembly: SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Service boundary methods catch all exceptions for logging and graceful failure", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.Features")]

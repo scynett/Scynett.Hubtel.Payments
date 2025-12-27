@@ -18,7 +18,7 @@ public sealed class ReceiveMobileMoneyService(
     IPendingTransactionsStore pendingStore,
     ILogger<ReceiveMobileMoneyService> logger,
     IValidator<InitPaymentRequest> initPaymentValidator,
-    IValidator<PaymentCallback> callbackValidator) : IReceiveMoneyService
+    IValidator<PaymentCallback> callbackValidator) : IReceiveMoneyProcessor
 {
     public async Task<Result<InitPaymentResponse>> InitAsync(
         InitPaymentRequest command,

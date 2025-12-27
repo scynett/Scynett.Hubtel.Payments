@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddRefitClient<IReceiveMobileMoneyApi>()
             .ConfigureHttpClient((sp, client) =>
             {
-                var options = sp.GetRequiredService<IOptions<HubtelSettings>>().Value;
+                var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;
                 client.BaseAddress = new Uri(options.BaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 
@@ -45,7 +45,7 @@ public static class ServiceCollectionExtensions
             .AddStandardResilienceHandler(resilienceOptions =>
             {
                 // Retry configuration with sensible defaults
-                // Users can override via HubtelSettings.Resilience in appsettings.json
+                // Users can override via HubtelOptions.Resilience in appsettings.json
                 resilienceOptions.Retry.MaxRetryAttempts = 3;
                 resilienceOptions.Retry.BackoffType = DelayBackoffType.Exponential;
                 resilienceOptions.Retry.Delay = TimeSpan.FromSeconds(1);
@@ -72,8 +72,9 @@ public static class ServiceCollectionExtensions
                 resilienceOptions.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
             });
 
-        // Public API layer - Orchestration service
-        services.AddScoped<IReceiveMoneyService, ReceiveMobileMoneyService>();
+        // Public API layer - Processors
+        services.AddScoped<IReceiveMoneyProcessor, ReceiveMobileMoneyService>();
+        services.AddScoped<ITransactionStatusProcessor, HubtelStatusService>();
 
         return services;
     }

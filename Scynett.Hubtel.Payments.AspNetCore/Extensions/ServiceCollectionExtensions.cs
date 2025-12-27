@@ -18,16 +18,16 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration)
     {
         // Configuration
-        services.Configure<HubtelSettings>(configuration.GetSection(HubtelSettings.SectionName));
+        services.Configure<HubtelOptions>(configuration.GetSection(HubtelOptions.SectionName));
 
         // Core payment services - these will internally register Refit clients
         services.AddHubtelPaymentsCore();
 
         // Status service - Uses HttpClient directly
-        services.AddHttpClient<IHubtelStatusService, HubtelStatusService>()
+        services.AddHttpClient<ITransactionStatusProcessor, HubtelStatusService>()
             .ConfigureHttpClient((sp, client) =>
             {
-                var options = sp.GetRequiredService<IOptions<HubtelSettings>>().Value;
+                var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;
                 client.BaseAddress = new Uri(options.BaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             });

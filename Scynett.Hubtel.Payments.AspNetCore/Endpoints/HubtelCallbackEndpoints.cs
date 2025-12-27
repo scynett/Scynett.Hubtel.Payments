@@ -44,7 +44,7 @@ public static class HubtelCallbackEndpoints
             request.Data.Charges ?? 0,
             request.Data.CustomerMobileNumber ?? string.Empty);
 
-        var result = await receiveMoneyService.ProcessCallbackAsync(command);
+        var result = await receiveMoneyService.ProcessCallbackAsync(command).ConfigureAwait(false);
 
         if (result.IsFailure)
         {

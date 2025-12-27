@@ -1,0 +1,31 @@
+<Project>
+  <PropertyGroup>
+    <!-- .NET -->
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Build quality -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+
+    <!-- Deterministic & CI friendly -->
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+
+    <!-- Docs & packaging -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn> <!-- Missing XML docs -->
+
+    <!-- NuGet packages -->
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <!-- Apply to all projects -->
+  <ItemGroup>
+    <Using Include="System.Diagnostics.CodeAnalysis" />
+  </ItemGroup>
+</Project>

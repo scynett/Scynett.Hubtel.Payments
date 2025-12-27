@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Scynett.Hubtel.Payments.AspNetCore.Workers;
 using Scynett.Hubtel.Payments.Configuration;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
+using Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
 using Scynett.Hubtel.Payments.Features.Status;
 using Scynett.Hubtel.Payments.Storage;
 
@@ -14,12 +15,12 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<HubtelOptions>(configuration.GetSection(HubtelOptions.SectionName));
+        services.Configure<HubtelSettings>(configuration.GetSection(HubtelSettings.SectionName));
 
-        services.AddHttpClient<IReceiveMoneyService, ReceiveMoneyService>()
+        services.AddHttpClient<IReceiveMoneyService, ReceiveMobileMoneyService>()
             .ConfigureHttpClient((sp, client) =>
             {
-                var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<HubtelOptions>>().Value;
+                var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<HubtelSettings>>().Value;
                 client.BaseAddress = new Uri(options.BaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             });
@@ -27,7 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IHubtelStatusService, HubtelStatusService>()
             .ConfigureHttpClient((sp, client) =>
             {
-                var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<HubtelOptions>>().Value;
+                var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<HubtelSettings>>().Value;
                 client.BaseAddress = new Uri(options.BaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             });

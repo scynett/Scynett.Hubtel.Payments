@@ -11,12 +11,12 @@ namespace Scynett.Hubtel.Payments.Features.Status;
 public sealed class HubtelStatusService : IHubtelStatusService
 {
     private readonly HttpClient _httpClient;
-    private readonly HubtelOptions _options;
+    private readonly HubtelSettings _options;
     private readonly ILogger<HubtelStatusService> _logger;
 
     public HubtelStatusService(
         HttpClient httpClient,
-        IOptions<HubtelOptions> options,
+        IOptions<HubtelSettings> options,
         ILogger<HubtelStatusService> logger)
     {
         _httpClient = httpClient;
@@ -34,20 +34,22 @@ public sealed class HubtelStatusService : IHubtelStatusService
                 Encoding.ASCII.GetBytes($"{_options.ClientId}:{_options.ClientSecret}"));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authValue);
 
-            var response = await _httpClient.GetAsync(
+            var uri = new Uri(
                 $"{_options.BaseUrl}/v2/merchantaccount/merchants/{_options.MerchantAccountNumber}/transactions/{query.TransactionId}",
-                cancellationToken);
+                UriKind.Absolute);
+
+            var response = await _httpClient.GetAsync(uri, cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                 _logger.LogError("Failed to check status: {StatusCode} - {Error}",
                     response.StatusCode, errorContent);
                 return Result.Failure<CheckStatusResponse>(
                     new Error("Status.CheckFailed", $"Failed to check status: {response.StatusCode}"));
             }
 
-            var result = await response.Content.ReadFromJsonAsync<HubtelStatusApiResponse>(cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<HubtelStatusApiResponse>(cancellationToken).ConfigureAwait(false);
 
             if (result == null || result.Data == null)
             {

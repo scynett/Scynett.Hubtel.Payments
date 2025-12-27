@@ -34,14 +34,27 @@ public sealed class PendingTransactionsWorker : BackgroundService
         {
             try
             {
-                await CheckPendingTransactionsAsync(stoppingToken);
+                await CheckPendingTransactionsAsync(stoppingToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when cancellation is requested
+                break;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while checking pending transactions");
             }
 
-            await Task.Delay(_checkInterval, stoppingToken);
+            try
+            {
+                await Task.Delay(_checkInterval, stoppingToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when cancellation is requested
+                break;
+            }
         }
 
         _logger.LogInformation("Pending Transactions Worker stopped");
@@ -49,10 +62,10 @@ public sealed class PendingTransactionsWorker : BackgroundService
 
     private async Task CheckPendingTransactionsAsync(CancellationToken cancellationToken)
     {
-        var pendingTransactions = await _pendingStore.GetAllAsync(cancellationToken);
+        var pendingTransactions = await _pendingStore.GetAllAsync(cancellationToken).ConfigureAwait(false);
         var transactionList = pendingTransactions.ToList();
 
-        if (!transactionList.Any())
+        if (transactionList.Count == 0)
         {
             _logger.LogDebug("No pending transactions to check");
             return;
@@ -69,7 +82,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
             {
                 var statusResult = await _statusService.CheckStatusAsync(
                     new CheckStatusQuery(transactionId),
-                    cancellationToken);
+                    cancellationToken).ConfigureAwait(false);
 
                 if (statusResult.IsFailure)
                 {
@@ -79,16 +92,16 @@ public sealed class PendingTransactionsWorker : BackgroundService
                     continue;
                 }
 
-                var status = statusResult.Value.Status.ToLowerInvariant();
+                var status = statusResult.Value.Status.ToUpperInvariant();
 
-                if (status is "success" or "successful" or "failed" or "cancelled")
+                if (status is "SUCCESS" or "SUCCESSFUL" or "FAILED" or "CANCELLED")
                 {
                     _logger.LogInformation(
                         "Transaction {TransactionId} completed with status: {Status}",
                         transactionId, status);
 
                     var callbackCommand = new ReceiveMoneyCallbackCommand(
-                        status == "success" || status == "successful" ? "0000" : "9999",
+                        status == "SUCCESS" || status == "SUCCESSFUL" ? "0000" : "9999",
                         status,
                         transactionId,
                         string.Empty,
@@ -98,8 +111,13 @@ public sealed class PendingTransactionsWorker : BackgroundService
                         statusResult.Value.Charges,
                         statusResult.Value.CustomerMobileNumber);
 
-                    await _receiveMoneyService.ProcessCallbackAsync(callbackCommand, cancellationToken);
+                    await _receiveMoneyService.ProcessCallbackAsync(callbackCommand, cancellationToken).ConfigureAwait(false);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when cancellation is requested
+                break;
             }
             catch (Exception ex)
             {

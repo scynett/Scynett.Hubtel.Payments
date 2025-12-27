@@ -1,4 +1,4 @@
-namespace Scynett.Hubtel.Payments.Logging;
+namespace Scynett.Hubtel.Payments.Models;
 
 /// <summary>
 /// Event IDs for Hubtel Payments logging.

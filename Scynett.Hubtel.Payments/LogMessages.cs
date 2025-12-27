@@ -1,12 +1,40 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 using Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
-using Scynett.Hubtel.Payments.Logging;
+using Scynett.Hubtel.Payments.Models;
 
-namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
+using System.Net;
 
-internal static partial class Log
+namespace Scynett.Hubtel.Payments;
+
+internal static partial class LogMessages
 {
+    [LoggerMessage(
+        EventId = HubtelEventIds.StatusCheckStarted,
+        Level = LogLevel.Information,
+        Message = "Checking transaction status for {identifier}")]
+    internal static partial void CheckingStatus(
+        ILogger logger,
+        string identifier);
+
+    [LoggerMessage(
+        EventId = HubtelEventIds.StatusCheckFailed,
+        Level = LogLevel.Warning,
+        Message = "Failed to check status. HTTP {statusCode}: {error}")]
+    internal static partial void FailedToCheckStatus(
+        ILogger logger,
+        HttpStatusCode statusCode,
+        string error);
+
+    [LoggerMessage(
+        EventId = HubtelEventIds.StatusCheckError,
+        Level = LogLevel.Error,
+        Message = "Error checking transaction status for {identifier}")]
+    internal static partial void ErrorCheckingStatus(
+        ILogger logger,
+        Exception exception,
+        string identifier);
+
     [LoggerMessage(
         EventId = HubtelEventIds.PaymentInitiating,
         Level = LogLevel.Information,

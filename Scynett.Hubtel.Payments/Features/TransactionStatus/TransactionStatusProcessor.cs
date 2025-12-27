@@ -46,7 +46,7 @@ public sealed class TransactionStatusProcessor : ITransactionStatusProcessor
         {
             var error = validationResult.ToError();
             var identifier = request.ClientReference ?? request.HubtelTransactionId ?? request.NetworkTransactionId ?? "Unknown";
-            Log.ErrorCheckingStatus(_logger, new ValidationException(validationResult.Errors), identifier);
+            LogMessages.ErrorCheckingStatus(_logger, new ValidationException(validationResult.Errors), identifier);
             return Result.Failure<TransactionStatusResult>(error);
         }
 
@@ -70,7 +70,7 @@ public sealed class TransactionStatusProcessor : ITransactionStatusProcessor
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                Log.FailedToCheckStatus(_logger, response.StatusCode, errorContent);
+                LogMessages.FailedToCheckStatus(_logger, response.StatusCode, errorContent);
                 return Result.Failure<TransactionStatusResult>(
                     new Error("Status.CheckFailed", $"Failed to check status: {response.StatusCode}"));
             }
@@ -94,7 +94,7 @@ public sealed class TransactionStatusProcessor : ITransactionStatusProcessor
         catch (Exception ex)
         {
             var identifier = request.ClientReference ?? request.HubtelTransactionId ?? request.NetworkTransactionId ?? "Unknown";
-            Log.ErrorCheckingStatus(_logger, ex, identifier);
+            LogMessages.ErrorCheckingStatus(_logger, ex, identifier);
             return Result.Failure<TransactionStatusResult>(
                 new Error("Status.Exception", ex.Message));
         }

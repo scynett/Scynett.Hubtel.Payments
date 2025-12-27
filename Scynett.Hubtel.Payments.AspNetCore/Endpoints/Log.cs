@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-using Scynett.Hubtel.Payments.Logging;
+using Scynett.Hubtel.Payments.Models;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.Endpoints;
 

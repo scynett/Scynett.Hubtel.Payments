@@ -31,13 +31,13 @@ public sealed class ReceiveMoneyProcessor(
         if (!validationResult.IsValid)
         {
             var error = validationResult.ToError();
-            Log.ErrorInitiatingPayment(logger, new ValidationException(validationResult.Errors), request.CustomerName ?? "Unknown");
+            LogMessages.ErrorInitiatingPayment(logger, new ValidationException(validationResult.Errors), request.CustomerName ?? "Unknown");
             return Result.Failure<ReceiveMoneyResult>(error);
         }
 
         try
         {
-            Log.InitiatingPayment(logger, request.CustomerName ?? "Unknown", request.Amount, request.Channel);
+            LogMessages.InitiatingPayment(logger, request.CustomerName ?? "Unknown", request.Amount, request.Channel);
 
             // Note: Validation ensures these are not null/empty, but we use null-forgiving operator
             // to satisfy the compiler since the validator guarantees these values are present
@@ -59,7 +59,7 @@ public sealed class ReceiveMoneyProcessor(
                 gatewayResponse.ResponseCode,
                 gatewayResponse.Message);
 
-            Log.PaymentInitResponse(logger, decision.Code, decision.Category, decision.CustomerMessage ?? string.Empty);
+            LogMessages.PaymentInitResponse(logger, decision.Code, decision.Category, decision.CustomerMessage ?? string.Empty);
 
             if (decision.Category == ResponseCategory.Pending)
             {
@@ -67,7 +67,7 @@ public sealed class ReceiveMoneyProcessor(
                 if (!string.IsNullOrWhiteSpace(transactionId))
                 {
                     await pendingStore.AddAsync(transactionId, cancellationToken).ConfigureAwait(false);
-                    Log.TransactionAddedToPendingStore(logger, transactionId);
+                    LogMessages.TransactionAddedToPendingStore(logger, transactionId);
                 }
             }
 
@@ -87,7 +87,7 @@ public sealed class ReceiveMoneyProcessor(
         }
         catch (Exception ex)
         {
-            Log.ErrorInitiatingPayment(logger, ex, request.CustomerName ?? "Unknown");
+            LogMessages.ErrorInitiatingPayment(logger, ex, request.CustomerName ?? "Unknown");
             return Result.Failure<ReceiveMoneyResult>(
                 new Error("Payment.InitException", "An error occurred while initiating the payment"));
         }
@@ -102,31 +102,31 @@ public sealed class ReceiveMoneyProcessor(
         if (!validationResult.IsValid)
         {
             var error = validationResult.ToError();
-            Log.ErrorProcessingCallback(logger, new ValidationException(validationResult.Errors), callback.TransactionId);
+            LogMessages.ErrorProcessingCallback(logger, new ValidationException(validationResult.Errors), callback.TransactionId);
             return Result.Failure(error);
         }
 
         try
         {
-            Log.ProcessingCallback(logger, callback.TransactionId, callback.Status);
+            LogMessages.ProcessingCallback(logger, callback.TransactionId, callback.Status);
 
             var decision = HubtelResponseDecisionFactory.Create(
                 callback.ResponseCode,
                 callback.Status);
 
-            Log.CallbackDecision(logger, decision.Code, decision.Category, decision.IsFinal);
+            LogMessages.CallbackDecision(logger, decision.Code, decision.Category, decision.IsFinal);
 
             if (decision.IsFinal)
             {
                 await pendingStore.RemoveAsync(callback.TransactionId, cancellationToken).ConfigureAwait(false);
-                Log.TransactionRemovedFromPendingStore(logger, callback.TransactionId);
+                LogMessages.TransactionRemovedFromPendingStore(logger, callback.TransactionId);
             }
 
             return Result.Success();
         }
         catch (Exception ex)
         {
-            Log.ErrorProcessingCallback(logger, ex, callback.TransactionId);
+            LogMessages.ErrorProcessingCallback(logger, ex, callback.TransactionId);
             return Result.Failure(
                 new Error("Payment.CallbackException", "An error occurred while processing the callback"));
         }

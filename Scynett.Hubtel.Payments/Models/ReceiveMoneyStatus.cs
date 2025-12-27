@@ -1,9 +1,9 @@
 ﻿namespace Scynett.Hubtel.Payments.Models;
 
 /// <summary>
-/// Represents the status of a Hubtel transaction.
+/// Represents the status state of a Hubtel transaction.
 /// </summary>
-public enum TransactionStatus
+public enum TransactionState
 {
     /// <summary>
     /// Transaction completed successfully.

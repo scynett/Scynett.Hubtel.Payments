@@ -1,6 +1,9 @@
 ﻿namespace Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
 
-public sealed record ReceiveMobileMoneyGatewayRequest(
+/// <summary>
+/// Request model for Hubtel Receive Money API.
+/// </summary>
+public sealed record HubtelReceiveMoneyRequest(
     string CustomerName,
     string CustomerMsisdn,
     string CustomerEmail,

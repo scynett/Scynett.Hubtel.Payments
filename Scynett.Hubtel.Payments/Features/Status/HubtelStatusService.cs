@@ -12,20 +12,23 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 
-namespace Scynett.Hubtel.Payments.Features.Status;
+namespace Scynett.Hubtel.Payments.Features.TransactionStatus;
 
-public sealed class HubtelStatusService : ITransactionStatusProcessor
+/// <summary>
+/// Processor for checking Hubtel transaction status.
+/// </summary>
+public sealed class TransactionStatusProcessor : ITransactionStatusProcessor
 {
     private readonly HttpClient _httpClient;
     private readonly HubtelOptions _options;
-    private readonly ILogger<HubtelStatusService> _logger;
-    private readonly IValidator<StatusRequest> _validator;
+    private readonly ILogger<TransactionStatusProcessor> _logger;
+    private readonly IValidator<TransactionStatusRequest> _validator;
 
-    public HubtelStatusService(
+    public TransactionStatusProcessor(
         HttpClient httpClient,
         IOptions<HubtelOptions> options,
-        ILogger<HubtelStatusService> logger,
-        IValidator<StatusRequest> validator)
+        ILogger<TransactionStatusProcessor> logger,
+        IValidator<TransactionStatusRequest> validator)
     {
         _httpClient = httpClient;
         _options = options.Value;
@@ -33,18 +36,18 @@ public sealed class HubtelStatusService : ITransactionStatusProcessor
         _validator = validator;
     }
 
-    public async Task<Result<CheckStatusResponse>> CheckStatusAsync(
-        StatusRequest query,
+    public async Task<Result<TransactionStatusResult>> CheckStatusAsync(
+        TransactionStatusRequest request,
         CancellationToken cancellationToken = default)
     {
         // Validate input
-        var validationResult = await _validator.ValidateAsync(query, cancellationToken).ConfigureAwait(false);
+        var validationResult = await _validator.ValidateAsync(request, cancellationToken).ConfigureAwait(false);
         if (!validationResult.IsValid)
         {
             var error = validationResult.ToError();
-            var identifier = query.ClientReference ?? query.HubtelTransactionId ?? query.NetworkTransactionId ?? "Unknown";
+            var identifier = request.ClientReference ?? request.HubtelTransactionId ?? request.NetworkTransactionId ?? "Unknown";
             Log.ErrorCheckingStatus(_logger, new ValidationException(validationResult.Errors), identifier);
-            return Result.Failure<CheckStatusResponse>(error);
+            return Result.Failure<TransactionStatusResult>(error);
         }
 
         try
@@ -55,7 +58,7 @@ public sealed class HubtelStatusService : ITransactionStatusProcessor
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authValue);
 
             // Build query string based on provided identifier
-            var queryString = BuildQueryString(query);
+            var queryString = BuildQueryString(request);
             
             // Use Hubtel Status API endpoint
             var uri = new Uri(
@@ -68,7 +71,7 @@ public sealed class HubtelStatusService : ITransactionStatusProcessor
             {
                 var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                 Log.FailedToCheckStatus(_logger, response.StatusCode, errorContent);
-                return Result.Failure<CheckStatusResponse>(
+                return Result.Failure<TransactionStatusResult>(
                     new Error("Status.CheckFailed", $"Failed to check status: {response.StatusCode}"));
             }
 
@@ -76,11 +79,11 @@ public sealed class HubtelStatusService : ITransactionStatusProcessor
 
             if (result == null || result.Data == null)
             {
-                return Result.Failure<CheckStatusResponse>(
+                return Result.Failure<TransactionStatusResult>(
                     new Error("Status.NullResponse", "Received null response from Hubtel API"));
             }
 
-            return new CheckStatusResponse(
+            return new TransactionStatusResult(
                 result.Data.TransactionId ?? string.Empty,
                 result.Data.Status ?? string.Empty,
                 result.Message ?? string.Empty,
@@ -90,24 +93,24 @@ public sealed class HubtelStatusService : ITransactionStatusProcessor
         }
         catch (Exception ex)
         {
-            var identifier = query.ClientReference ?? query.HubtelTransactionId ?? query.NetworkTransactionId ?? "Unknown";
+            var identifier = request.ClientReference ?? request.HubtelTransactionId ?? request.NetworkTransactionId ?? "Unknown";
             Log.ErrorCheckingStatus(_logger, ex, identifier);
-            return Result.Failure<CheckStatusResponse>(
+            return Result.Failure<TransactionStatusResult>(
                 new Error("Status.Exception", ex.Message));
         }
     }
 
-    private static string BuildQueryString(StatusRequest query)
+    private static string BuildQueryString(TransactionStatusRequest request)
     {
         // ClientReference is preferred per Hubtel documentation
-        if (!string.IsNullOrWhiteSpace(query.ClientReference))
-            return $"clientReference={Uri.EscapeDataString(query.ClientReference)}";
+        if (!string.IsNullOrWhiteSpace(request.ClientReference))
+            return $"clientReference={Uri.EscapeDataString(request.ClientReference)}";
 
-        if (!string.IsNullOrWhiteSpace(query.HubtelTransactionId))
-            return $"hubtelTransactionId={Uri.EscapeDataString(query.HubtelTransactionId)}";
+        if (!string.IsNullOrWhiteSpace(request.HubtelTransactionId))
+            return $"hubtelTransactionId={Uri.EscapeDataString(request.HubtelTransactionId)}";
 
-        if (!string.IsNullOrWhiteSpace(query.NetworkTransactionId))
-            return $"networkTransactionId={Uri.EscapeDataString(query.NetworkTransactionId)}";
+        if (!string.IsNullOrWhiteSpace(request.NetworkTransactionId))
+            return $"networkTransactionId={Uri.EscapeDataString(request.NetworkTransactionId)}";
 
         // This should never happen due to validation
         return string.Empty;

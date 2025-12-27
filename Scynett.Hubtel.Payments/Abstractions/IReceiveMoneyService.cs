@@ -1,6 +1,5 @@
 using Scynett.Hubtel.Payments.Common;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
-using Scynett.Hubtel.Payments.Features.ReceiveMoney.InitPayment;
 
 namespace Scynett.Hubtel.Payments.Abstractions;
 
@@ -12,20 +11,20 @@ public interface IReceiveMoneyProcessor
     /// <summary>
     /// Initiates a receive money transaction.
     /// </summary>
-    /// <param name="command">The payment initiation request.</param>
+    /// <param name="request">The receive money request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result containing the payment response or error.</returns>
-    Task<Result<InitPaymentResponse>> InitAsync(
-        InitPaymentRequest command,
+    /// <returns>Result containing the transaction details or error.</returns>
+    Task<Result<ReceiveMoneyResult>> InitAsync(
+        ReceiveMoneyRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Processes a payment callback from Hubtel.
     /// </summary>
-    /// <param name="command">The callback data from Hubtel.</param>
+    /// <param name="callback">The callback data from Hubtel.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result indicating success or failure.</returns>
     Task<Result> ProcessCallbackAsync(
-        PaymentCallback command,
+        PaymentCallback callback,
         CancellationToken cancellationToken = default);
 }

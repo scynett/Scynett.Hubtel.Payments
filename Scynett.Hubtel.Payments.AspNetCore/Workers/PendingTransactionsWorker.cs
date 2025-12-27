@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 using Scynett.Hubtel.Payments.Abstractions;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
-using Scynett.Hubtel.Payments.Features.Status;
+using Scynett.Hubtel.Payments.Features.TransactionStatus;
 using Scynett.Hubtel.Payments.Storage;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.Workers;
@@ -82,7 +82,7 @@ public sealed class PendingTransactionsWorker : BackgroundService
             {
                 // Use ByHubtelTransactionId since we're querying by Hubtel-generated transaction ID
                 var statusResult = await _statusProcessor.CheckStatusAsync(
-                    StatusRequest.ByHubtelTransactionId(transactionId),
+                    TransactionStatusRequest.ByHubtelTransactionId(transactionId),
                     cancellationToken).ConfigureAwait(false);
 
                 if (statusResult.IsFailure)

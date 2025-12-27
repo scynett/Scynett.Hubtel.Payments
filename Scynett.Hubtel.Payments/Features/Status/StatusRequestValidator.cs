@@ -1,13 +1,13 @@
 using FluentValidation;
 
-namespace Scynett.Hubtel.Payments.Features.Status;
+namespace Scynett.Hubtel.Payments.Features.TransactionStatus;
 
 /// <summary>
-/// Validator for StatusRequest based on Hubtel Status API specifications.
+/// Validator for TransactionStatusRequest based on Hubtel Status API specifications.
 /// </summary>
-public sealed class StatusRequestValidator : AbstractValidator<StatusRequest>
+public sealed class TransactionStatusRequestValidator : AbstractValidator<TransactionStatusRequest>
 {
-    public StatusRequestValidator()
+    public TransactionStatusRequestValidator()
     {
         // At least one identifier must be provided
         RuleFor(x => x)

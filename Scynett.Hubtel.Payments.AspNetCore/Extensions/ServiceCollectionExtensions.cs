@@ -6,7 +6,7 @@ using Scynett.Hubtel.Payments.Abstractions;
 using Scynett.Hubtel.Payments.AspNetCore.Workers;
 using Scynett.Hubtel.Payments.Configuration;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
-using Scynett.Hubtel.Payments.Features.Status;
+using Scynett.Hubtel.Payments.Features.TransactionStatus;
 using Scynett.Hubtel.Payments.Storage;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.Extensions;
@@ -23,8 +23,8 @@ public static class ServiceCollectionExtensions
         // Core payment services - these will internally register Refit clients
         services.AddHubtelPaymentsCore();
 
-        // Status service - Uses HttpClient directly
-        services.AddHttpClient<ITransactionStatusProcessor, HubtelStatusService>()
+        // Status processor - Uses HttpClient directly
+        services.AddHttpClient<ITransactionStatusProcessor, TransactionStatusProcessor>()
             .ConfigureHttpClient((sp, client) =>
             {
                 var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;

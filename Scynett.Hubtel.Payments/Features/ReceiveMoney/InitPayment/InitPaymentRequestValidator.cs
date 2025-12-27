@@ -1,15 +1,15 @@
 using FluentValidation;
 
-namespace Scynett.Hubtel.Payments.Features.ReceiveMoney.InitPayment;
+namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
 /// <summary>
-/// Validator for InitPaymentRequest based on Hubtel API specifications.
+/// Validator for ReceiveMoneyRequest based on Hubtel API specifications.
 /// </summary>
-public sealed class InitPaymentRequestValidator : AbstractValidator<InitPaymentRequest>
+public sealed class ReceiveMoneyRequestValidator : AbstractValidator<ReceiveMoneyRequest>
 {
     private static readonly string[] ValidChannels = ["mtn-gh", "vodafone-gh", "tigo-gh"];
 
-    public InitPaymentRequestValidator()
+    public ReceiveMoneyRequestValidator()
     {
         RuleFor(x => x.CustomerName)
             .MaximumLength(100)

@@ -12,7 +12,6 @@ using Scynett.Hubtel.Payments.Abstractions;
 using Scynett.Hubtel.Payments.Configuration;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney.Gateway;
-using Scynett.Hubtel.Payments.Features.ReceiveMoney.InitPayment;
 using Scynett.Hubtel.Payments.Features.Status;
 
 using System.Net;
@@ -26,12 +25,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddHubtelPaymentsCore(this IServiceCollection services)
     {
         // Validators
-        services.AddScoped<IValidator<InitPaymentRequest>, InitPaymentRequestValidator>();
+        services.AddScoped<IValidator<ReceiveMoneyRequest>, ReceiveMoneyRequestValidator>();
         services.AddScoped<IValidator<PaymentCallback>, PaymentCallbackValidator>();
         services.AddScoped<IValidator<StatusRequest>, StatusRequestValidator>();
 
-        // Gateway layer - Refit API client for ReceiveMoney with resilience
-        services.AddRefitClient<IReceiveMobileMoneyApi>()
+        // Gateway layer - Refit client for ReceiveMoney with resilience
+        services.AddRefitClient<IHubtelReceiveMoneyClient>()
             .ConfigureHttpClient((sp, client) =>
             {
                 var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;
@@ -73,7 +72,7 @@ public static class ServiceCollectionExtensions
             });
 
         // Public API layer - Processors
-        services.AddScoped<IReceiveMoneyProcessor, ReceiveMobileMoneyService>();
+        services.AddScoped<IReceiveMoneyProcessor, ReceiveMoneyProcessor>();
         services.AddScoped<ITransactionStatusProcessor, HubtelStatusService>();
 
         return services;

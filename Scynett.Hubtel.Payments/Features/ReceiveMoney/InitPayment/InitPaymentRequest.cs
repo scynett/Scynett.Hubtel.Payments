@@ -1,10 +1,13 @@
-namespace Scynett.Hubtel.Payments.Features.ReceiveMoney.InitPayment;
+namespace Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
-public sealed record InitPaymentRequest(
-    string CustomerName,
+/// <summary>
+/// Request to initiate a receive money transaction.
+/// </summary>
+public sealed record ReceiveMoneyRequest(
+    string? CustomerName,
     string CustomerMobileNumber,
     string Channel,
     decimal Amount,
     string Description,
-    string? ClientReference = null,
-    string? PrimaryCallbackEndPoint = null);
+    string ClientReference,
+    string PrimaryCallbackEndPoint);

@@ -1,10 +1,10 @@
-namespace Scynett.Hubtel.Payments.Features.Status;
+namespace Scynett.Hubtel.Payments.Features.TransactionStatus;
 
 /// <summary>
 /// Request to check the status of a transaction.
 /// You must provide at least one of: ClientReference (preferred), HubtelTransactionId, or NetworkTransactionId.
 /// </summary>
-public sealed record StatusRequest
+public sealed record TransactionStatusRequest
 {
     /// <summary>
     /// The client reference of the transaction (preferred - mandatory if others not provided).
@@ -24,18 +24,18 @@ public sealed record StatusRequest
     /// <summary>
     /// Creates a status request using client reference (preferred).
     /// </summary>
-    public static StatusRequest ByClientReference(string clientReference) =>
+    public static TransactionStatusRequest ByClientReference(string clientReference) =>
         new() { ClientReference = clientReference };
 
     /// <summary>
     /// Creates a status request using Hubtel transaction ID.
     /// </summary>
-    public static StatusRequest ByHubtelTransactionId(string hubtelTransactionId) =>
+    public static TransactionStatusRequest ByHubtelTransactionId(string hubtelTransactionId) =>
         new() { HubtelTransactionId = hubtelTransactionId };
 
     /// <summary>
     /// Creates a status request using network transaction ID.
     /// </summary>
-    public static StatusRequest ByNetworkTransactionId(string networkTransactionId) =>
+    public static TransactionStatusRequest ByNetworkTransactionId(string networkTransactionId) =>
         new() { NetworkTransactionId = networkTransactionId };
 }

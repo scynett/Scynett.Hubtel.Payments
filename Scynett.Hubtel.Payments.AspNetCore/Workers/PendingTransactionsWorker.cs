@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using Scynett.Hubtel.Payments.Abstractions;
+using Scynett.Hubtel.Payments.Application.Abstractions;
+using Scynett.Hubtel.Payments.Application.Features.TransactionStatus;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
-using Scynett.Hubtel.Payments.Features.TransactionStatus;
-using Scynett.Hubtel.Payments.Storage;
+using Scynett.Hubtel.Payments.Infrastructure.Storage;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.Workers;
 

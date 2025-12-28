@@ -2,12 +2,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-using Scynett.Hubtel.Payments.Abstractions;
+using Scynett.Hubtel.Payments.Application.Abstractions;
+using Scynett.Hubtel.Payments.Application.Features.TransactionStatus;
 using Scynett.Hubtel.Payments.AspNetCore.Workers;
-using Scynett.Hubtel.Payments.Configuration;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
-using Scynett.Hubtel.Payments.Features.TransactionStatus;
-using Scynett.Hubtel.Payments.Storage;
+using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Infrastructure.Storage;
+using Scynett.Hubtel.Payments.Public.DependencyInjection;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.Extensions;
 

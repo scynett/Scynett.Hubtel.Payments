@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 
-using Scynett.Hubtel.Payments.Abstractions;
+using Scynett.Hubtel.Payments.Application.Abstractions;
 using Scynett.Hubtel.Payments.Features.ReceiveMoney;
 
 using System.Text.Json;

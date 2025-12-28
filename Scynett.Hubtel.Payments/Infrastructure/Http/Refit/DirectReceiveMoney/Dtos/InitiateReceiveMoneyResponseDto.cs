@@ -1,6 +1,5 @@
 ﻿namespace Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney.Dtos;
 
-
 /// <summary>
 /// Response model from Hubtel Receive Money API.
 /// </summary>
@@ -14,4 +13,10 @@ public sealed record InitiateReceiveMoneyResponseDto(
 /// </summary>
 public sealed record HubtelReceiveMoneyData(
     string? TransactionId,
-    string? ClientReference);
+    string? ClientReference,
+    string? Description,
+    decimal? Amount,
+    decimal? Charges,
+    decimal? AmountAfterCharges,
+    decimal? AmountCharged,
+    decimal? DeliveryFee);

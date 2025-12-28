@@ -116,14 +116,11 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 }
             }
 
-            // 6) Build result
-            var result = new InitiateReceiveMoneyResult(
-                ClientReference: request.ClientReference,
-                HubtelTransactionId: gatewayResponse.TransactionId ?? string.Empty,
-                Status: DetermineStatus(decision),
-                Amount: request.Amount,
-                Network: request.Channel,
-                RawResponseCode: gatewayResponse.ResponseCode);
+            // 6) Build result using mapper
+            var result = InitiateReceiveMoneyMapping.ToResult(
+                request,
+                gatewayResponse,
+                decision);
 
             // 7) Check if this is a failure scenario that should return failure
             if (!decision.IsSuccess && decision.IsFinal)

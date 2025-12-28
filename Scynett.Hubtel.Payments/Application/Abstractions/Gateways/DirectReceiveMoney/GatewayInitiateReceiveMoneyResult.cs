@@ -8,5 +8,11 @@ public sealed record GatewayInitiateReceiveMoneyResult(
     string ResponseCode,
     string? Message,
     string? TransactionId,
-    string? ExternalReference = null
+    string? ExternalReference = null,
+    string? Description = null,
+    decimal? Amount = null,
+    decimal? Charges = null,
+    decimal? AmountAfterCharges = null,
+    decimal? AmountCharged = null,
+    decimal? DeliveryFee = null
 );

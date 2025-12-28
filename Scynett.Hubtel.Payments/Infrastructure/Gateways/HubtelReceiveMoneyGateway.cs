@@ -44,7 +44,13 @@ internal sealed class HubtelReceiveMoneyGateway(
                 ResponseCode: content.ResponseCode,
                 Message: content.Message,
                 TransactionId: content.Data?.TransactionId,
-                ExternalReference: content.Data?.ClientReference);
+                ExternalReference: content.Data?.ClientReference,
+                Description: content.Data?.Description,
+                Amount: content.Data?.Amount,
+                Charges: content.Data?.Charges,
+                AmountAfterCharges: content.Data?.AmountAfterCharges,
+                AmountCharged: content.Data?.AmountCharged,
+                DeliveryFee: content.Data?.DeliveryFee);
         }
         catch (ApiException ex)
         {

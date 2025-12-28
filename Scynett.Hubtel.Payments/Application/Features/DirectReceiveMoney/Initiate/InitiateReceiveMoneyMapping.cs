@@ -29,16 +29,20 @@ internal static class InitiateReceiveMoneyMapping
         GatewayInitiateReceiveMoneyResult gateway,
         HandlingDecision decision)
     {
-        // status should come from decision/category, not hard-coded.
-        // Keep it explicit and predictable for SDK users.
         var status = decision.Category.ToString(); // e.g. Success / Pending / CustomerError / ValidationError
 
         return new InitiateReceiveMoneyResult(
             ClientReference: request.ClientReference,
             HubtelTransactionId: gateway.TransactionId ?? string.Empty,
             Status: status,
-            Amount: request.Amount,
+            Amount: gateway.Amount ?? request.Amount,
+            Charges: gateway.Charges ?? 0m,
+            AmountAfterCharges: gateway.AmountAfterCharges ?? request.Amount,
+            AmountCharged: gateway.AmountCharged ?? request.Amount,
             Network: request.Channel,
-            RawResponseCode: gateway.ResponseCode);
+            RawResponseCode: gateway.ResponseCode,
+            Message: gateway.Message,
+            Description: gateway.Description,
+            DeliveryFee: gateway.DeliveryFee);
     }
 }

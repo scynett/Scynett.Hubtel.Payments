@@ -1,4 +1,6 @@
-﻿using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
+﻿using System.Globalization;
+
+using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
@@ -11,10 +13,12 @@ internal static class InitiateReceiveMoneyMapping
         string callbackUrl)
     {
         return new GatewayInitiateReceiveMoneyRequest(
+            CustomerName: request.CustomerName ?? string.Empty,
             PosSalesId: posSalesId,
             CustomerMsisdn: request.CustomerMobileNumber,
+            CustomeeEmail: string.Empty,
             Channel: request.Channel,
-            Amount: request.Amount,
+            Amount: request.Amount.ToString("F2", CultureInfo.InvariantCulture),
             CallbackUrl: callbackUrl,
             Description: request.Description,
             ClientReference: request.ClientReference);

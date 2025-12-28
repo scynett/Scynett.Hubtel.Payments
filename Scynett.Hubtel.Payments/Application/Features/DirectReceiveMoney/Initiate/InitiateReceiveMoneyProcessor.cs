@@ -1,4 +1,4 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Globalization;
 
 using FluentValidation;
 
@@ -66,10 +66,12 @@ internal sealed class InitiateReceiveMoneyProcessor(
 
             // 2) Map request -> gateway request
             var gatewayRequest = new GatewayInitiateReceiveMoneyRequest(
+                CustomerName: request.CustomerName ?? string.Empty,
                 PosSalesId: posSalesId,
                 CustomerMsisdn: request.CustomerMobileNumber,
+                CustomeeEmail: string.Empty,
                 Channel: request.Channel,
-                Amount: request.Amount,
+                Amount: request.Amount.ToString("F2", CultureInfo.InvariantCulture),
                 CallbackUrl: request.PrimaryCallbackEndPoint,
                 Description: request.Description,
                 ClientReference: request.ClientReference);

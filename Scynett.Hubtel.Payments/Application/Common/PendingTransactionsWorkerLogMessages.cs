@@ -20,6 +20,10 @@ internal static partial class PendingTransactionsWorkerLogMessages
         Message = "Pending transaction still pending. TransactionId={TransactionId} Status={Status}")]
     public static partial void StillPending(ILogger logger, string transactionId, string status);
 
+    [LoggerMessage(EventId = 7708, Level = LogLevel.Debug,
+        Message = "Skipping transaction {TransactionId} - waiting for callback window to elapse.")]
+    public static partial void TooEarly(ILogger logger, string transactionId);
+
     [LoggerMessage(EventId = 7705, Level = LogLevel.Warning,
         Message = "Status check failed. TransactionId={TransactionId} Code={Code} Message={Message}")]
     public static partial void StatusFailed(ILogger logger, string transactionId, string? code, string? message);

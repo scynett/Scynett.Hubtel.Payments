@@ -20,6 +20,7 @@ internal sealed class PendingTransactionsWorker(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var pollInterval = options.Value.PollInterval;
+        var callbackWait = options.Value.CallbackGracePeriod;
 
         PendingTransactionsWorkerLogMessages.Started(logger, pollInterval);
 
@@ -30,7 +31,7 @@ internal sealed class PendingTransactionsWorker(
                 var pending = await store.GetAllAsync(stoppingToken).ConfigureAwait(false);
                 PendingTransactionsWorkerLogMessages.Polling(logger, pending.Count);
 
-                foreach (var transactionId in pending)
+                foreach (var transaction in pending)
                 {
                     if (stoppingToken.IsCancellationRequested)
                         break;
@@ -38,8 +39,14 @@ internal sealed class PendingTransactionsWorker(
 #pragma warning disable CA1031 // Do not catch general exception types
                     try
                     {
+                        if (DateTimeOffset.UtcNow - transaction.CreatedAtUtc < callbackWait)
+                        {
+                            PendingTransactionsWorkerLogMessages.TooEarly(logger, transaction.HubtelTransactionId ?? "unknown");
+                            continue;
+                        }
+
                         // Option A: query supports multiple identifiers
-                        var query = new TransactionStatusQuery(HubtelTransactionId: transactionId);
+                        var query = new TransactionStatusQuery(HubtelTransactionId: transaction.HubtelTransactionId);
 
                         var result = await directReceiveMoney
                             .CheckStatusAsync(query, stoppingToken)
@@ -49,7 +56,7 @@ internal sealed class PendingTransactionsWorker(
                         {
                             PendingTransactionsWorkerLogMessages.StatusFailed(
                                 logger,
-                                transactionId,
+                                transaction.HubtelTransactionId ?? "unknown",
                                 result.Error?.Code,
                                 result.Error?.Description);
 
@@ -60,17 +67,17 @@ internal sealed class PendingTransactionsWorker(
 
                         if (IsFinal(status))
                         {
-                            await store.RemoveAsync(transactionId, stoppingToken).ConfigureAwait(false);
-                            PendingTransactionsWorkerLogMessages.Completed(logger, transactionId, status);
+                            await store.RemoveAsync(transaction.HubtelTransactionId ?? string.Empty, stoppingToken).ConfigureAwait(false);
+                            PendingTransactionsWorkerLogMessages.Completed(logger, transaction.HubtelTransactionId ?? "unknown", status);
                         }
                         else
                         {
-                            PendingTransactionsWorkerLogMessages.StillPending(logger, transactionId, status);
+                            PendingTransactionsWorkerLogMessages.StillPending(logger, transaction.HubtelTransactionId ?? "unknown", status);
                         }
                     }
                     catch (Exception ex)
                     {
-                        PendingTransactionsWorkerLogMessages.ProcessingError(logger, ex, transactionId);
+                        PendingTransactionsWorkerLogMessages.ProcessingError(logger, ex, transaction.HubtelTransactionId ?? "unknown");
                     }
 
                 }

@@ -4,22 +4,24 @@ namespace Scynett.Hubtel.Payments.Infrastructure.Storage;
 
 public sealed class InMemoryPendingTransactionsStore : IPendingTransactionsStore
 {
-    private readonly ConcurrentDictionary<string, byte> _transactions = new();
+    private readonly ConcurrentDictionary<string, byte> _transactions = new(StringComparer.OrdinalIgnoreCase);
 
     public Task AddAsync(string transactionId, CancellationToken cancellationToken = default)
     {
-        _transactions.TryAdd(transactionId, 0);
+        if (!string.IsNullOrWhiteSpace(transactionId))
+            _transactions.TryAdd(transactionId, 0);
+
         return Task.CompletedTask;
     }
 
     public Task RemoveAsync(string transactionId, CancellationToken cancellationToken = default)
     {
-        _transactions.TryRemove(transactionId, out _);
+        if (!string.IsNullOrWhiteSpace(transactionId))
+            _transactions.TryRemove(transactionId, out _);
+
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<string>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult<IEnumerable<string>>(_transactions.Keys.ToList());
-    }
+    public Task<IReadOnlyList<string>> GetAllAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<string>>(_transactions.Keys.ToList());
 }

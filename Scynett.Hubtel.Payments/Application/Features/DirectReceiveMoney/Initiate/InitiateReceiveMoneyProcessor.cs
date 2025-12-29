@@ -52,8 +52,8 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 MaskMsisdn(request.CustomerMobileNumber));
 
             // Determine which POS Sales ID to use
-            var posSalesId = !string.IsNullOrWhiteSpace(directReceiveMoneyOptions.Value.PosSalesIdOverride)
-                ? directReceiveMoneyOptions.Value.PosSalesIdOverride
+            var posSalesId = !string.IsNullOrWhiteSpace(directReceiveMoneyOptions.Value.PosSalesId)
+                ? directReceiveMoneyOptions.Value.PosSalesId
                 : hubtelOptions.Value.MerchantAccountNumber;
 
             if (string.IsNullOrWhiteSpace(posSalesId))

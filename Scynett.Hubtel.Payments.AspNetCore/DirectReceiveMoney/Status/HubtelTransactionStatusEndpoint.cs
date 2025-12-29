@@ -20,7 +20,7 @@ internal static class HubtelTransactionStatusEndpoint
             {
                 var result =
                     await directReceiveMoney
-                        .QueryStatusAsync(new TransactionStatusRequest(clientReference), ct)
+                        .CheckStatusAsync(new TransactionStatusQuery(clientReference), ct)
                         .ConfigureAwait(false);
 
                 // 200 OK means "status retrieved"

@@ -1,6 +1,8 @@
 ﻿using Scynett.Hubtel.Payments.Application.Abstractions.Gateways;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 
 internal static class TransactionStatusMapping
@@ -15,9 +17,10 @@ internal static class TransactionStatusMapping
             Amount: gateway.Amount,
             Charges: gateway.Charges,
             AmountAfterCharges: gateway.AmountAfterCharges,
-            HubtelTransactionId: gateway.HubtelTransactionId,
+            TransactionId: gateway.HubtelTransactionId, 
             ExternalTransactionId: gateway.ExternalTransactionId,
-            PaymentMethod: gateway.PaymentMethod,
-            PaymentDate: gateway.PaymentDate);
+            Date: gateway.PaymentDate,
+            RawResponseCode: decision.Code,
+            RawMessage: decision.CustomerMessage);
     }
 }

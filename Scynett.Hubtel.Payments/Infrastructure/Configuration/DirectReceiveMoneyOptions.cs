@@ -11,5 +11,5 @@ public sealed class DirectReceiveMoneyOptions
     /// Optional override for the POS Sales ID for Direct Receive Money.
     /// If empty, the global HubtelOptions.PosSalesId is used.
     /// </summary>
-    public string? PosSalesIdOverride { get; init; }
+    public string? PosSalesId { get; init; }
 }

@@ -8,37 +8,39 @@ using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 
-
 internal sealed class TransactionStatusProcessor(
-    IHubtelReceiveMoneyGateway gateway,
-    IValidator<TransactionStatusRequest> validator,
+    IHubtelTransactionStatusGateway gateway, 
+    IValidator<TransactionStatusQuery> validator,
     ILogger<TransactionStatusProcessor> logger)
 {
     public async Task<OperationResult<TransactionStatusResult>> CheckAsync(
-        TransactionStatusRequest request,
+        TransactionStatusQuery query,
         CancellationToken ct)
     {
-        var validation = await validator.ValidateAsync(request, ct)
-            .ConfigureAwait(false);
+        var validation = await validator.ValidateAsync(query, ct).ConfigureAwait(false);
         if (!validation.IsValid)
         {
-            logger.InvalidRequest(request.ClientReference);
+            logger.InvalidRequest(GetLogKey(query));
             return OperationResult<TransactionStatusResult>.Failure(
-                Error.Validation("TransactionStatus.InvalidRequest", validation.ToString()));
+                Error.Validation("TransactionStatus.InvalidQuery", validation.ToString()));
         }
 
         try
         {
-            logger.CheckingStatus(request.ClientReference);
+            var key = GetLogKey(query);
+            logger.CheckingStatus(key);
 
-            var gatewayResult =
-                await gateway.GetTransactionStatusAsync(
-                    request.ClientReference,
-                    ct).ConfigureAwait(false);
+            var gatewayResult = await gateway.CheckStatusAsync(query, ct).ConfigureAwait(false);
 
+            if (gatewayResult.IsFailure)
+                return OperationResult<TransactionStatusResult>.Failure(gatewayResult.Error!);
+
+            // If your status endpoint returns "responseCode" always 0000 for successful call
+            // you can still apply decisions if you want, but typically it’s not needed.
+            // Keeping it here is fine if you already have code mapping logic.
             var decision = HubtelResponseDecisionFactory.Create(
-                gatewayResult.ResponseCode,
-                gatewayResult.Message);
+                gatewayResult.Value!.RawResponseCode,
+                gatewayResult.Value!.RawMessage);
 
             if (!decision.IsSuccess && decision.IsFinal)
             {
@@ -48,20 +50,20 @@ internal sealed class TransactionStatusProcessor(
                         decision.CustomerMessage ?? "Transaction status check failed"));
             }
 
-            var result = TransactionStatusMapping.ToResult(
-                gatewayResult,
-                decision);
-
-            return OperationResult<TransactionStatusResult>.Success(result);
+            return OperationResult<TransactionStatusResult>.Success(gatewayResult.Value!);
         }
         catch (Exception ex)
         {
-            logger.StatusCheckError(ex, request.ClientReference);
-
+            logger.StatusCheckError(ex, GetLogKey(query));
             return OperationResult<TransactionStatusResult>.Failure(
-                Error.Problem(
-                    "TransactionStatus.Exception",
+                Error.Problem("TransactionStatus.Exception",
                     "An error occurred while checking transaction status"));
         }
     }
+
+    private static string GetLogKey(TransactionStatusQuery q)
+        => q.ClientReference
+        ?? q.HubtelTransactionId
+        ?? q.NetworkTransactionId
+        ?? "unknown";
 }

@@ -1,5 +1,6 @@
 ﻿using Refit;
 
+using Scynett.Hubtel.Payments.Application.Abstractions.Gateways;
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney.Dtos;
@@ -79,5 +80,10 @@ internal sealed class HubtelReceiveMoneyGateway(
             return null;
         }
 #pragma warning restore CA1031 // Do not catch general exception types
+    }
+
+    public Task<GatewayTransactionStatusResult> GetTransactionStatusAsync(string clientReference, CancellationToken ct)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -1,3 +1,5 @@
+using System;
+
 namespace Scynett.Hubtel.Payments.Infrastructure.Configuration;
 
 
@@ -7,6 +9,16 @@ public class HubtelOptions
     /// Configuration section name in appsettings.json.
     /// </summary>
     public const string SectionName = "Hubtel";
+
+    /// <summary>
+    /// Default base address for the Direct Receive Money API.
+    /// </summary>
+    public const string DefaultReceiveMoneyBaseAddress = "https://rmp.hubtel.com";
+
+    /// <summary>
+    /// Default base address for the Transaction Status API.
+    /// </summary>
+    public const string DefaultTransactionStatusBaseAddress = "https://api-txnstatus.hubtel.com";
 
     /// <summary>
     /// Hubtel API Client ID for authentication.
@@ -24,9 +36,24 @@ public class HubtelOptions
     public string MerchantAccountNumber { get; set; } = string.Empty;
 
     /// <summary>
-    /// Base URL for Hubtel API endpoints.
+    /// Base URL for Direct Receive Money endpoint.
     /// </summary>
-    public string BaseAddress { get; set; } = "https://api.hubtel.com";
+    public string ReceiveMoneyBaseAddress { get; set; } = DefaultReceiveMoneyBaseAddress;
+
+    /// <summary>
+    /// Base URL for Transaction Status endpoint.
+    /// </summary>
+    public string TransactionStatusBaseAddress { get; set; } = DefaultTransactionStatusBaseAddress;
+
+    /// <summary>
+    /// Maintained for backward compatibility. Use <see cref="ReceiveMoneyBaseAddress"/> instead.
+    /// </summary>
+    [Obsolete("Use ReceiveMoneyBaseAddress instead.")]
+    public string BaseAddress
+    {
+        get => ReceiveMoneyBaseAddress;
+        set => ReceiveMoneyBaseAddress = value;
+    }
 
     /// <summary>
     /// HTTP client timeout in seconds.

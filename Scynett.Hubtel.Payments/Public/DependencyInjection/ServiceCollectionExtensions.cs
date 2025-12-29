@@ -1,11 +1,23 @@
+using System;
+
 using FluentValidation;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
+using Refit;
+
+using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
+using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 using Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
 using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Infrastructure.Gateways;
+using Scynett.Hubtel.Payments.Infrastructure.Http;
+using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.Infrastructure.Storage;
 using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
 
 namespace Scynett.Hubtel.Payments.Public.DependencyInjection;
@@ -14,17 +26,47 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddHubtelPayments(this IServiceCollection services, Action<PendingTransactionsWorkerOptions>? configure = null)
     {
+        services.TryAddSingleton<IPendingTransactionsStore, InMemoryPendingTransactionsStore>();
+        services.AddTransient<HubtelAuthHandler>();
+
+        services.AddScoped<IHubtelReceiveMoneyGateway, HubtelReceiveMoneyGateway>();
+        services.AddScoped<IHubtelTransactionStatusGateway, HubtelTransactionStatusGateway>();
+
         // --- Validators
         services.AddScoped<IValidator<InitiateReceiveMoneyRequest>, InitiateReceiveMoneyRequestValidator>();
         services.AddScoped<IValidator<ReceiveMoneyCallbackRequest>, ReceiveMoneyCallbackRequestValidator>();
+        services.AddScoped<IValidator<TransactionStatusQuery>, TransactionStatusQueryValidator>();
 
         // --- Processors
         services.AddScoped<InitiateReceiveMoneyProcessor>();
         services.AddScoped<ReceiveMoneyCallbackProcessor>();
+        services.AddScoped<TransactionStatusProcessor>();
 
         // --- Public feature
         services.AddScoped<IDirectReceiveMoney, DirectReceiveMoney.DirectReceiveMoney>();
 
+        // --- HTTP clients
+        services.AddRefitClient<IHubtelDirectReceiveMoneyApi>()
+            .ConfigureHttpClient((sp, client) =>
+            {
+                var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;
+                client.BaseAddress = ResolveBaseAddress(
+                    options.ReceiveMoneyBaseAddress,
+                    HubtelOptions.DefaultReceiveMoneyBaseAddress);
+                client.Timeout = ResolveTimeout(options.TimeoutSeconds);
+            })
+            .AddHttpMessageHandler<HubtelAuthHandler>();
+
+        services.AddRefitClient<IHubtelTransactionStatusApi>()
+            .ConfigureHttpClient((sp, client) =>
+            {
+                var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;
+                client.BaseAddress = ResolveBaseAddress(
+                    options.TransactionStatusBaseAddress,
+                    HubtelOptions.DefaultTransactionStatusBaseAddress);
+                client.Timeout = ResolveTimeout(options.TimeoutSeconds);
+            })
+            .AddHttpMessageHandler<HubtelAuthHandler>();
 
         if (configure is not null)
             services.Configure(configure);
@@ -35,5 +77,16 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<PendingTransactionsWorker>();
 
         return services;
+    }
+
+    private static Uri ResolveBaseAddress(string? configured, string @default)
+        => Uri.TryCreate(configured, UriKind.Absolute, out var uri)
+            ? uri
+            : new Uri(@default, UriKind.Absolute);
+
+    private static TimeSpan ResolveTimeout(int timeoutSeconds)
+    {
+        var value = timeoutSeconds <= 0 ? 30 : timeoutSeconds;
+        return TimeSpan.FromSeconds(value);
     }
 }

@@ -8,8 +8,9 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Public namespace clearly indicates public SDK surface area", Scope = "namespace", Target = "~N:Scynett.Hubtel.Payments.Public.DependencyInjection")]
 [assembly: SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Public namespace clearly indicates public SDK surface area", Scope = "namespace", Target = "~N:Scynett.Hubtel.Payments.Public.DirectReceiveMoney")]
 
-// CA1056: BaseUrl is stored as string for flexibility and serialization
-[assembly: SuppressMessage("Design", "CA1056:URI properties should not be strings", Justification = "BaseUrl is stored as string for configuration flexibility", Scope = "member", Target = "~P:Scynett.Hubtel.Payments.Infrastructure.Configuration.HubtelOptions.BaseUrl")]
+// CA1056: Base addresses are stored as strings for configuration flexibility
+[assembly: SuppressMessage("Design", "CA1056:URI properties should not be strings", Justification = "Base addresses are stored as strings for configuration flexibility", Scope = "member", Target = "~P:Scynett.Hubtel.Payments.Infrastructure.Configuration.HubtelOptions.ReceiveMoneyBaseAddress")]
+[assembly: SuppressMessage("Design", "CA1056:URI properties should not be strings", Justification = "Base addresses are stored as strings for configuration flexibility", Scope = "member", Target = "~P:Scynett.Hubtel.Payments.Infrastructure.Configuration.HubtelOptions.TransactionStatusBaseAddress")]
 
 // CA1031: Catching general exceptions at service boundaries is acceptable for logging and graceful failure
 [assembly: SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Service boundary methods catch all exceptions for logging and graceful failure", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.Application.Features")]

@@ -6,6 +6,8 @@
 public sealed record InitiateReceiveMoneyResult(
     string ClientReference,
     string HubtelTransactionId,
+    string? ExternalTransactionId,
+    string? OrderId,
     string Status,              // Pending / Success / Failed
     decimal Amount,
     decimal Charges,

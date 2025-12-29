@@ -34,6 +34,8 @@ internal static class InitiateReceiveMoneyMapping
         return new InitiateReceiveMoneyResult(
             ClientReference: request.ClientReference,
             HubtelTransactionId: gateway.TransactionId ?? string.Empty,
+            ExternalTransactionId: gateway.ExternalTransactionId,
+            OrderId: gateway.OrderId,
             Status: status,
             Amount: gateway.Amount ?? request.Amount,
             Charges: gateway.Charges ?? 0m,

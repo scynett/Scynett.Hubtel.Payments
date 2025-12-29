@@ -19,4 +19,6 @@ public sealed record HubtelReceiveMoneyData(
     decimal? Charges,
     decimal? AmountAfterCharges,
     decimal? AmountCharged,
-    decimal? DeliveryFee);
+    decimal? DeliveryFee,
+    string? ExternalTransactionId,
+    string? OrderId);

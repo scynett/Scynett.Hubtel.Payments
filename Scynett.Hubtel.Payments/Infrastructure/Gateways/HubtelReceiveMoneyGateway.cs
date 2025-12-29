@@ -46,6 +46,8 @@ internal sealed class HubtelReceiveMoneyGateway(
                 Message: content.Message,
                 TransactionId: content.Data?.TransactionId,
                 ExternalReference: content.Data?.ClientReference,
+                ExternalTransactionId: content.Data?.ExternalTransactionId,
+                OrderId: content.Data?.OrderId,
                 Description: content.Data?.Description,
                 Amount: content.Data?.Amount,
                 Charges: content.Data?.Charges,

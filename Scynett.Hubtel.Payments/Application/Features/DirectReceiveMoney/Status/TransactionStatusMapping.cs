@@ -19,6 +19,9 @@ internal static class TransactionStatusMapping
             AmountAfterCharges: gateway.AmountAfterCharges,
             TransactionId: gateway.HubtelTransactionId, 
             ExternalTransactionId: gateway.ExternalTransactionId,
+            PaymentMethod: gateway.PaymentMethod,
+            CurrencyCode: gateway.CurrencyCode,
+            IsFulfilled: gateway.IsFulfilled,
             Date: gateway.PaymentDate,
             RawResponseCode: decision.Code,
             RawMessage: decision.CustomerMessage);

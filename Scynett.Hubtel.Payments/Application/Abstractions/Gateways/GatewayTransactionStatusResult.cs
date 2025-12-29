@@ -10,5 +10,7 @@ public sealed record GatewayTransactionStatusResult(
     decimal AmountAfterCharges,
     string? HubtelTransactionId,
     string? ExternalTransactionId,
-    string PaymentMethod,
+    string? PaymentMethod,
+    string? CurrencyCode,
+    bool? IsFulfilled,
     DateTimeOffset? PaymentDate);

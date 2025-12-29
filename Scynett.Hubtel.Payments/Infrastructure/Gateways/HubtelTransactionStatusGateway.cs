@@ -10,14 +10,18 @@ namespace Scynett.Hubtel.Payments.Infrastructure.Gateways;
 
 internal sealed class HubtelTransactionStatusGateway(
     IHubtelTransactionStatusApi api,
-    IOptions<DirectReceiveMoneyOptions> directReceiveMoneyOptions)
+    IOptions<DirectReceiveMoneyOptions> directReceiveMoneyOptions,
+    IOptions<HubtelOptions> hubtelOptions)
     : IHubtelTransactionStatusGateway
 {
     public async Task<OperationResult<TransactionStatusResult>> CheckStatusAsync(
         TransactionStatusQuery query,
         CancellationToken ct = default)
     {
-        var posSalesId = directReceiveMoneyOptions.Value.PosSalesId;
+        var posSalesId = !string.IsNullOrWhiteSpace(directReceiveMoneyOptions.Value.PosSalesId)
+            ? directReceiveMoneyOptions.Value.PosSalesId
+            : hubtelOptions.Value.MerchantAccountNumber;
+
         if (string.IsNullOrWhiteSpace(posSalesId))
         {
             return OperationResult<TransactionStatusResult>.Failure(

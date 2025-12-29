@@ -1,11 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 
+using Scynett.Hubtel.Payments.Application.Common;
+
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
 
 internal static partial class InitiateReceiveMoneyLogMessages
 {
     [LoggerMessage(
-        EventId = 41001,
+        EventId = HubtelEventIds.DirectReceiveMoneyValidationFailed,
         Level = LogLevel.Warning,
         Message = "DirectReceiveMoney validation failed. ClientReference={ClientReference}. Error={Error}")]
     public static partial void ValidationFailed(
@@ -14,7 +16,7 @@ internal static partial class InitiateReceiveMoneyLogMessages
         string error);
 
     [LoggerMessage(
-        EventId = 41002,
+        EventId = HubtelEventIds.DirectReceiveMoneyInitiating,
         Level = LogLevel.Information,
         Message = "Initiating DirectReceiveMoney. ClientReference={ClientReference}, Amount={Amount}, Network={Network}, Msisdn={Msisdn}")]
     public static partial void Initiating(
@@ -25,7 +27,7 @@ internal static partial class InitiateReceiveMoneyLogMessages
         string msisdn);
 
     [LoggerMessage(
-        EventId = 41003,
+        EventId = HubtelEventIds.DirectReceiveMoneyGatewayFailed,
         Level = LogLevel.Error,
         Message = "DirectReceiveMoney gateway call failed. ClientReference={ClientReference}. Error={ErrorCode} {ErrorDescription}")]
     public static partial void GatewayFailed(
@@ -35,7 +37,7 @@ internal static partial class InitiateReceiveMoneyLogMessages
         string errorDescription);
 
     [LoggerMessage(
-        EventId = 41004,
+        EventId = HubtelEventIds.DirectReceiveMoneyDecisionComputed,
         Level = LogLevel.Information,
         Message = "DirectReceiveMoney decision computed. ClientReference={ClientReference}, Code={Code}, Category={Category}, NextAction={NextAction}, IsFinal={IsFinal}")]
     public static partial void DecisionComputed(
@@ -47,7 +49,7 @@ internal static partial class InitiateReceiveMoneyLogMessages
         bool isFinal);
 
     [LoggerMessage(
-        EventId = 41005,
+        EventId = HubtelEventIds.DirectReceiveMoneyPendingStored,
         Level = LogLevel.Information,
         Message = "Stored pending DirectReceiveMoney transaction. ClientReference={ClientReference}, TransactionId={TransactionId}")]
     public static partial void PendingStored(
@@ -56,7 +58,7 @@ internal static partial class InitiateReceiveMoneyLogMessages
         string transactionId);
 
     [LoggerMessage(
-        EventId = 41006,
+        EventId = HubtelEventIds.DirectReceiveMoneyPendingButMissingTransactionId,
         Level = LogLevel.Warning,
         Message = "DirectReceiveMoney pending decision returned but TransactionId is missing. ClientReference={ClientReference}, Code={Code}")]
     public static partial void PendingButMissingTransactionId(
@@ -65,7 +67,7 @@ internal static partial class InitiateReceiveMoneyLogMessages
         string code);
 
     [LoggerMessage(
-        EventId = 41007,
+        EventId = HubtelEventIds.DirectReceiveMoneyUnhandledException,
         Level = LogLevel.Error,
         Message = "Unhandled exception while initiating DirectReceiveMoney. ClientReference={ClientReference}")]
     public static partial void UnhandledException(

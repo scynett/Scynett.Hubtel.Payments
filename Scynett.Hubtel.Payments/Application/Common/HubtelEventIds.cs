@@ -12,7 +12,23 @@ public static class HubtelEventIds
     public const int TransactionPending = 103;
     public const int TransactionCompleted = 104;
 
-    // Callback Events (200-299)
+    // DirectReceiveMoney - Initiate Events (110-129)
+    public const int DirectReceiveMoneyInitiating = 110;
+    public const int DirectReceiveMoneyValidationFailed = 111;
+    public const int DirectReceiveMoneyDecisionComputed = 112;
+    public const int DirectReceiveMoneyPendingStored = 113;
+    public const int DirectReceiveMoneyPendingButMissingTransactionId = 114;
+    public const int DirectReceiveMoneyGatewayFailed = 115;
+    public const int DirectReceiveMoneyUnhandledException = 116;
+
+    // DirectReceiveMoney - Callback Events (130-149)
+    public const int DirectReceiveMoneyCallbackReceived = 130;
+    public const int DirectReceiveMoneyCallbackDecision = 131;
+    public const int DirectReceiveMoneyCallbackPendingRemoved = 132;
+    public const int DirectReceiveMoneyCallbackValidationFailed = 133;
+    public const int DirectReceiveMoneyCallbackProcessingFailed = 134;
+
+    // Callback Events (200-299) - Legacy/Generic
     public const int CallbackReceived = 200;
     public const int CallbackProcessing = 201;
     public const int CallbackProcessed = 202;

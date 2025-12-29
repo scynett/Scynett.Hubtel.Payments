@@ -11,4 +11,9 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Extension method parameters are validated by the framework", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.AspNetCore.Extensions")]
 
 // CA1812: Internal record types used for JSON deserialization are instantiated by System.Text.Json
-[assembly: SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Records are instantiated by System.Text.Json during deserialization", Scope = "namespaceanddescendants", Target = "~N:Scynett.Hubtel.Payments.AspNetCore.Endpoints")]
+[assembly: SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated via reflection or DI (middleware/endpoints)", Scope = "module")]
+
+[assembly: SuppressMessage(
+    "Design",
+    "CA1062:Validate arguments of public methods",
+    Justification = "Validated by ASP.NET Core pipeline")]

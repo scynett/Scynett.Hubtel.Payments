@@ -16,7 +16,7 @@ internal static class InitiateReceiveMoneyMapping
             CustomerName: request.CustomerName ?? string.Empty,
             PosSalesId: posSalesId,
             CustomerMsisdn: request.CustomerMobileNumber,
-            CustomeeEmail: string.Empty,
+            CustomerEmail: request.CustomerEmail ?? string.Empty,
             Channel: request.Channel,
             Amount: request.Amount.ToString("F2", CultureInfo.InvariantCulture),
             CallbackUrl: callbackUrl,

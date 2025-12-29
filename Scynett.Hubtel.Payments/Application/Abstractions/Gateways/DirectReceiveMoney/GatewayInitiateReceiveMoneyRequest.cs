@@ -8,7 +8,7 @@ public sealed record GatewayInitiateReceiveMoneyRequest(
     string CustomerName,
     string PosSalesId,
     string CustomerMsisdn,
-    string CustomeeEmail,
+    string CustomerEmail,
     string Channel,
     string Amount,
 #pragma warning disable CA1054 // URI-like parameters should not be strings

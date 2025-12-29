@@ -17,6 +17,13 @@ internal class InitiateReceiveMoneyRequestValidator : AbstractValidator<Initiate
         .WithMessage("Customer name must not exceed 100 characters")
         .When(x => !string.IsNullOrWhiteSpace(x.CustomerName));
 
+        RuleFor(x => x.CustomerEmail)
+            .MaximumLength(256)
+            .WithMessage("Customer email must not exceed 256 characters")
+            .EmailAddress()
+            .WithMessage("Customer email must be a valid email address")
+            .When(x => !string.IsNullOrWhiteSpace(x.CustomerEmail));
+
         RuleFor(x => x.CustomerMobileNumber)
             .NotEmpty()
             .WithMessage("Customer mobile number is required (Mandatory)")

@@ -6,6 +6,7 @@
 
 public sealed record InitiateReceiveMoneyRequest(
     string? CustomerName,
+    string? CustomerEmail,
     string CustomerMobileNumber,
     string Channel,
     decimal Amount,

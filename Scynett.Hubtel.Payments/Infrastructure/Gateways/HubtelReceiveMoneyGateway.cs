@@ -27,7 +27,7 @@ internal sealed class HubtelReceiveMoneyGateway(
                 CustomerName: request.CustomerName,
                 CustomerMsisdn: request.CustomerMsisdn,
                 Channel: request.Channel,
-                CustomerEmail: request.CustomeeEmail,
+                CustomerEmail: request.CustomerEmail,
                 Amount: request.Amount,
                 PrimaryCallbackEndpoint: request.CallbackUrl,
                 Description: request.Description,

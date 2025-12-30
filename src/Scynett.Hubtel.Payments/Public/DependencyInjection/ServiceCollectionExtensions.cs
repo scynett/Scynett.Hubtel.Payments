@@ -52,7 +52,7 @@ public static class ServiceCollectionExtensions
                 var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;
                 client.BaseAddress = ResolveBaseAddress(
                     options.ReceiveMoneyBaseAddress,
-                    HubtelOptions.DefaultReceiveMoneyBaseAddress);
+                    nameof(HubtelOptions.ReceiveMoneyBaseAddress));
                 client.Timeout = ResolveTimeout(options.TimeoutSeconds);
             })
             .AddHttpMessageHandler<HubtelAuthHandler>();
@@ -63,26 +63,36 @@ public static class ServiceCollectionExtensions
                 var options = sp.GetRequiredService<IOptions<HubtelOptions>>().Value;
                 client.BaseAddress = ResolveBaseAddress(
                     options.TransactionStatusBaseAddress,
-                    HubtelOptions.DefaultTransactionStatusBaseAddress);
+                    nameof(HubtelOptions.TransactionStatusBaseAddress));
                 client.Timeout = ResolveTimeout(options.TimeoutSeconds);
             })
             .AddHttpMessageHandler<HubtelAuthHandler>();
 
+        services.AddOptions<PendingTransactionsWorkerOptions>();
         if (configure is not null)
             services.Configure(configure);
-
-        else
-            services.Configure<PendingTransactionsWorkerOptions>(_ => { });
 
         services.AddHostedService<PendingTransactionsWorker>();
 
         return services;
     }
 
-    private static Uri ResolveBaseAddress(string? configured, string @default)
-        => Uri.TryCreate(configured, UriKind.Absolute, out var uri)
-            ? uri
-            : new Uri(@default, UriKind.Absolute);
+    private static Uri ResolveBaseAddress(string? configured, string optionName)
+    {
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            throw new InvalidOperationException(
+                $"Hubtel option '{optionName}' must be a non-empty absolute URI.");
+        }
+
+        if (!Uri.TryCreate(configured, UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException(
+                $"Hubtel option '{optionName}' must be a valid absolute URI.");
+        }
+
+        return uri;
+    }
 
     private static TimeSpan ResolveTimeout(int timeoutSeconds)
     {

@@ -22,12 +22,15 @@ public class InitiateReceiveMoneyRequestValidator : AbstractValidator<InitiateRe
             .WithMessage("Customer email must not exceed 256 characters")
             .EmailAddress()
             .WithMessage("Customer email must be a valid email address")
+            .Matches(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+            .WithMessage("Customer email must be a valid email address")
             .When(x => !string.IsNullOrWhiteSpace(x.CustomerEmail));
 
         RuleFor(x => x.CustomerMobileNumber)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage("Customer mobile number is required (Mandatory)")
-            .Matches(@"^\d{12}$")
+            .Matches(@"^[0-9]{12}$")
             .WithMessage("Mobile number must be 12 digits in international format (e.g., 233241234567)")
             .Must(number => number.StartsWith("233", StringComparison.Ordinal))
             .WithMessage("Mobile number must start with Ghana country code 233");
@@ -59,11 +62,11 @@ public class InitiateReceiveMoneyRequestValidator : AbstractValidator<InitiateRe
             .WithMessage("Client reference should preferably be alphanumeric characters");
 
         RuleFor(x => x.PrimaryCallbackEndPoint)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage("Primary callback URL is required (Mandatory)")
             .Must(BeAValidUrl)
-            .WithMessage("Callback endpoint must be a valid HTTP or HTTPS URL")
-            .When(x => !string.IsNullOrWhiteSpace(x.PrimaryCallbackEndPoint));
+            .WithMessage("Callback endpoint must be a valid HTTP or HTTPS URL");
     }
 
     private static bool BeAValidUrl(string? url)

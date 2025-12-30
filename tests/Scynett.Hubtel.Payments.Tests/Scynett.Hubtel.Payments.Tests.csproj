@@ -22,11 +22,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\src\Scynett.Hubtel.Payments.AspNetCore\Scynett.Hubtel.Payments.AspNetCore.csproj" />
 	  <ProjectReference Include="..\..\src\Scynett.Hubtel.Payments\Scynett.Hubtel.Payments.csproj" />
 	</ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="IntegrationTests\" />
   </ItemGroup>
 
 </Project>

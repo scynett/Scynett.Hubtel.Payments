@@ -13,3 +13,4 @@ public sealed record InitiateReceiveMoneyRequest(
     string Description,
     string ClientReference,
     string PrimaryCallbackEndPoint);
+

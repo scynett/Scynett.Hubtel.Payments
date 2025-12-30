@@ -6,7 +6,7 @@ namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initia
 /// <summary>
 /// Validator for ReceiveMoneyRequest based on Hubtel API specifications.
 /// </summary>
-internal class InitiateReceiveMoneyRequestValidator : AbstractValidator<InitiateReceiveMoneyRequest>
+public class InitiateReceiveMoneyRequestValidator : AbstractValidator<InitiateReceiveMoneyRequest>
 {
     private static readonly string[] ValidChannels = ["mtn-gh", "vodafone-gh", "tigo-gh"];
 

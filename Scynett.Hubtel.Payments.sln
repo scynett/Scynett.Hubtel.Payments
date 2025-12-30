@@ -2,10 +2,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.1.11304.174
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments", "Scynett.Hubtel.Payments\Scynett.Hubtel.Payments.csproj", "{6A6487FB-C7BB-01D8-AE84-B28C2D2D3A6F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments.AspNetCore", "Scynett.Hubtel.Payments.AspNetCore\Scynett.Hubtel.Payments.AspNetCore.csproj", "{FBEFEC74-A4E1-B76C-E1B9-FE735AC93EA9}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{20C69912-72DF-4828-BEFA-0B4452FA884E}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -18,27 +14,38 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{41CB4EAE-634
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8A43AA99-E026-4446-BB81-9CF8D2E34530}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments.Tests", "tests\Scynett.Hubtel.Payments.Tests\Scynett.Hubtel.Payments.Tests.csproj", "{547DB6C4-3DCD-459D-BFA1-289CAFAB228D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments", "src\Scynett.Hubtel.Payments\Scynett.Hubtel.Payments.csproj", "{16F0B431-27D0-CABB-1235-11595D16D182}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments.AspNetCore", "src\Scynett.Hubtel.Payments.AspNetCore\Scynett.Hubtel.Payments.AspNetCore.csproj", "{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6A6487FB-C7BB-01D8-AE84-B28C2D2D3A6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6A6487FB-C7BB-01D8-AE84-B28C2D2D3A6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6A6487FB-C7BB-01D8-AE84-B28C2D2D3A6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6A6487FB-C7BB-01D8-AE84-B28C2D2D3A6F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FBEFEC74-A4E1-B76C-E1B9-FE735AC93EA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FBEFEC74-A4E1-B76C-E1B9-FE735AC93EA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FBEFEC74-A4E1-B76C-E1B9-FE735AC93EA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FBEFEC74-A4E1-B76C-E1B9-FE735AC93EA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{547DB6C4-3DCD-459D-BFA1-289CAFAB228D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{547DB6C4-3DCD-459D-BFA1-289CAFAB228D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{547DB6C4-3DCD-459D-BFA1-289CAFAB228D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{547DB6C4-3DCD-459D-BFA1-289CAFAB228D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16F0B431-27D0-CABB-1235-11595D16D182}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16F0B431-27D0-CABB-1235-11595D16D182}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16F0B431-27D0-CABB-1235-11595D16D182}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16F0B431-27D0-CABB-1235-11595D16D182}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{6A6487FB-C7BB-01D8-AE84-B28C2D2D3A6F} = {41CB4EAE-634C-4DAD-AE10-90FC08A83A37}
-		{FBEFEC74-A4E1-B76C-E1B9-FE735AC93EA9} = {41CB4EAE-634C-4DAD-AE10-90FC08A83A37}
+		{547DB6C4-3DCD-459D-BFA1-289CAFAB228D} = {8A43AA99-E026-4446-BB81-9CF8D2E34530}
+		{16F0B431-27D0-CABB-1235-11595D16D182} = {41CB4EAE-634C-4DAD-AE10-90FC08A83A37}
+		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79} = {41CB4EAE-634C-4DAD-AE10-90FC08A83A37}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E7C5049-183E-4AF8-9070-14FC91FCABC1}

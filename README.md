@@ -113,6 +113,39 @@ app.MapGet("/payments/{clientReference}/status", async (
 
 The hosted worker already performs periodic checks for pending items, but you can expose manual status lookups whenever you need them.
 
+### Handling failures
+
+Every API returns `OperationResult<T>`, so expected payment outcomes (validation errors, declines, pending callbacks) never throw. Inspect the result before using it:
+
+```csharp
+var result = await _direct.InitiateAsync(request, ct);
+
+if (!result.IsSuccess)
+{
+    _logger.LogWarning("Hubtel failure {Code} ({ProviderCode})", result.Error.Code, result.Error.ProviderCode);
+    return Problem(detail: result.Error.Description, title: result.Error.Code);
+}
+
+var data = result.Value;
+// continue with your flow
+```
+
+If you prefer exception-based flows, use the helper extension:
+
+```csharp
+using Scynett.Hubtel.Payments;
+
+try
+{
+    var data = await _direct.InitiateAsync(request, ct).OrThrow();
+    // success
+}
+catch (HubtelPaymentsException ex)
+{
+    // inspect ex.Error.Code / ProviderCode / Metadata and decide whether to retry
+}
+```
+
 ## Configuration reference
 
 | Option | Description |
@@ -146,6 +179,21 @@ The worker simply calls `GetAllAsync`, `AddAsync`, and `RemoveAsync`, so any dur
 - `TransactionStatusQuery` -> `OperationResult<TransactionStatusResult>` (supports client reference, Hubtel transaction ID, or network transaction ID).
 
 Every command/result uses the shared `OperationResult<T>` + `Error` types so you can pattern match on `.IsSuccess` without exceptions.
+
+### Error codes
+
+| Error Code | When it is returned | Suggested Action |
+|------------|--------------------|------------------|
+| `DirectReceiveMoney.ValidationFailed` | Input payload failed FluentValidation checks. | Fix the request body and retry. |
+| `DirectReceiveMoney.MissingPosSalesId` | No POS sales ID configured. | Set `HubtelOptions.MerchantAccountNumber` or `DirectReceiveMoneyOptions.PosSalesId`. |
+| `DirectReceiveMoney.UnhandledException` | Unexpected exception during initiation (network, serialization, etc.). | Inspect `Error.Metadata["exception"]`, retry if transient. |
+| `Hubtel.StatusCheckFailed` | Hubtel returned a non-`0000` response to the status check. | Examine `Error.ProviderCode` / `ProviderMessage`, retry or contact Hubtel. |
+| `TransactionStatus.InvalidQuery` | Status query missing identifiers. | Provide at least one ID before retrying. |
+| `TransactionStatus.Exception` | Exception occurred while polling Hubtel. | Inspect metadata and retry later. |
+| `Hubtel.Callback.Validation` | Callback payload schema invalid. | Fix your callback endpoint serialization. |
+| `Hubtel.Callback.Exception` | Exception thrown while handling callback. | Inspect metadata, log, and retry if possible. |
+
+Each `Error` exposes `ProviderCode`, `ProviderMessage`, and optional metadata entries (e.g., exception type, HTTP status) so you can make data-driven retry decisions and log the original Hubtel response.
 
 ## Testing & samples
 

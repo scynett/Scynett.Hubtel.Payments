@@ -135,8 +135,9 @@ internal sealed class InitiateReceiveMoneyProcessor(
 
                 return OperationResult<InitiateReceiveMoneyResult>.Failure(
                     Error.Failure(
-                        $"DirectReceiveMoney.{decision.Category}",
-                        decision.CustomerMessage ?? gatewayResponse.Message ?? "Payment initialization failed"));
+                            $"DirectReceiveMoney.{decision.Category}",
+                            decision.CustomerMessage ?? gatewayResponse.Message ?? "Payment initialization failed")
+                        .WithProvider(gatewayResponse.ResponseCode, gatewayResponse.Message));
             }
 
             // SDK-friendly: Success if we got a Hubtel response; consumer interprets decision via result
@@ -153,8 +154,9 @@ internal sealed class InitiateReceiveMoneyProcessor(
 
             return OperationResult<InitiateReceiveMoneyResult>.Failure(
                 Error.Problem(
-                    "DirectReceiveMoney.UnhandledException",
-                    "An unexpected error occurred while initiating the payment."));
+                        "DirectReceiveMoney.UnhandledException",
+                        "An unexpected error occurred while initiating the payment.")
+                    .WithMetadata("exception", ex.GetType().Name));
         }
     }
 

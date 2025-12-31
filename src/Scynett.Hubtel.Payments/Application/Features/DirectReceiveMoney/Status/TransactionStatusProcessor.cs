@@ -46,8 +46,9 @@ internal sealed class TransactionStatusProcessor(
             {
                 return OperationResult<TransactionStatusResult>.Failure(
                     Error.Failure(
-                        $"TransactionStatus.{decision.Category}",
-                        decision.CustomerMessage ?? "Transaction status check failed"));
+                            $"TransactionStatus.{decision.Category}",
+                            decision.CustomerMessage ?? "Transaction status check failed")
+                        .WithProvider(gatewayResult.Value!.RawResponseCode, gatewayResult.Value!.RawMessage));
             }
 
             return OperationResult<TransactionStatusResult>.Success(gatewayResult.Value!);
@@ -57,7 +58,8 @@ internal sealed class TransactionStatusProcessor(
             logger.StatusCheckError(ex, GetLogKey(query));
             return OperationResult<TransactionStatusResult>.Failure(
                 Error.Problem("TransactionStatus.Exception",
-                    "An error occurred while checking transaction status"));
+                        "An error occurred while checking transaction status")
+                    .WithMetadata("exception", ex.GetType().Name));
         }
     }
 

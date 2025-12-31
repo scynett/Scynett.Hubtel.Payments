@@ -1,6 +1,9 @@
-﻿using CSharpFunctionalExtensions;
+using System.Diagnostics.CodeAnalysis;
+
+using CSharpFunctionalExtensions;
 
 namespace Scynett.Hubtel.Payments.Application.Common;
+
 #pragma warning disable CA1000 // Do not declare static members on generic types
 public sealed class OperationResult<T>
 {
@@ -20,7 +23,6 @@ public sealed class OperationResult<T>
 
     private OperationResult(bool isSuccess, T? value, Error? error)
     {
-        // Invariants
         if (isSuccess && error is not null)
             throw new ArgumentException("Successful result cannot contain an error.", nameof(error));
 
@@ -32,19 +34,36 @@ public sealed class OperationResult<T>
         _error = error;
     }
 
-    public static OperationResult<T> Success(T value)
-        => new(true, value, null);
+    public static OperationResult<T> Success(T value) => new(true, value, null);
 
+    public static OperationResult<T> Failure(Error error) => new(false, default, error);
 
-    public static OperationResult<T> Failure(Error error)
-#pragma warning restore CA1000 // Do not declare static members on generic types
-        => new(false, default, error);
-
-#pragma warning disable CA1000 // Do not declare static members on generic types
     public static OperationResult<T> From(Result<T, Error> result)
-#pragma warning restore CA1000 // Do not declare static members on generic types
         => result.IsSuccess ? Success(result.Value) : Failure(result.Error);
+
+    public bool TryGetValue([NotNullWhen(true)] out T? value, [NotNullWhen(false)] out Error? error)
+    {
+        if (IsSuccess)
+        {
+            value = _value!;
+            error = null;
+            return true;
+        }
+
+        value = default;
+        error = _error!;
+        return false;
+    }
+
+    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<Error, TResult> onFailure)
+    {
+        ArgumentNullException.ThrowIfNull(onSuccess);
+        ArgumentNullException.ThrowIfNull(onFailure);
+
+        return IsSuccess ? onSuccess(_value!) : onFailure(_error!);
+    }
 }
+#pragma warning restore CA1000 // Do not declare static members on generic types
 
 public class OperationResult
 {
@@ -73,7 +92,5 @@ public class OperationResult
     public static OperationResult Failure(Error error) => new(false, error);
 
     public static OperationResult From(Result result, Error error)
-#pragma warning disable CA1062 // Validate arguments of public methods
         => result.IsSuccess ? Success() : Failure(error);
-#pragma warning restore CA1062 // Validate arguments of public methods
 }

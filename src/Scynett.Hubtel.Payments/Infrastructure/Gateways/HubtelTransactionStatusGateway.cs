@@ -1,4 +1,8 @@
+using System.Globalization;
+
 using Microsoft.Extensions.Options;
+
+using Refit;
 
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Application.Common;
@@ -28,38 +32,59 @@ internal sealed class HubtelTransactionStatusGateway(
                 Error.Problem("Config.PosSalesId", "POS Sales ID is not configured."));
         }
 
-        var response = await api.GetStatusAsync(
-            posSalesId,
-            clientReference: query.ClientReference,
-            hubtelTransactionId: query.HubtelTransactionId,
-            networkTransactionId: query.NetworkTransactionId,
-            ct).ConfigureAwait(false);
+        try
+        {
+            var response = await api.GetStatusAsync(
+                posSalesId,
+                clientReference: query.ClientReference,
+                hubtelTransactionId: query.HubtelTransactionId,
+                networkTransactionId: query.NetworkTransactionId,
+                ct).ConfigureAwait(false);
 
-        if (!string.Equals(response.ResponseCode, "0000", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(response.ResponseCode, "0000", StringComparison.OrdinalIgnoreCase))
+            {
+                return OperationResult<TransactionStatusResult>.Failure(
+                    Error.Failure(
+                            "Hubtel.StatusCheckFailed",
+                            response.Message ?? "Status check failed")
+                        .WithProvider(response.ResponseCode, response.Message));
+            }
+
+            var data = response.Data;
+
+            return OperationResult<TransactionStatusResult>.Success(
+                new TransactionStatusResult(
+                    Status: data?.Status ?? "Unknown",
+                    ClientReference: data?.ClientReference,
+                    TransactionId: data?.TransactionId,
+                    ExternalTransactionId: data?.ExternalTransactionId,
+                    PaymentMethod: data?.PaymentMethod,
+                    CurrencyCode: data?.CurrencyCode,
+                    IsFulfilled: data?.IsFulfilled,
+                    Amount: data?.Amount,
+                    Charges: data?.Charges,
+                    AmountAfterCharges: data?.AmountAfterCharges,
+                    Date: data?.Date,
+                    RawResponseCode: response.ResponseCode,
+                    RawMessage: response.Message));
+        }
+        catch (ApiException apiEx)
         {
             return OperationResult<TransactionStatusResult>.Failure(
-                Error.Failure(
-                    "Hubtel.StatusCheckFailed",
-                    response.Message ?? "Status check failed"));
+                Error.Problem("Hubtel.Http.Status",
+                        "Failed to contact Hubtel status endpoint.")
+                    .WithMetadata("statusCode", ((int)apiEx.StatusCode).ToString(CultureInfo.InvariantCulture))
+                    .WithMetadata("reason", apiEx.ReasonPhrase ?? "unknown"));
         }
-
-        var data = response.Data;
-
-        return OperationResult<TransactionStatusResult>.Success(
-            new TransactionStatusResult(
-                Status: data?.Status ?? "Unknown",
-                ClientReference: data?.ClientReference,
-                TransactionId: data?.TransactionId,
-                ExternalTransactionId: data?.ExternalTransactionId,
-                PaymentMethod: data?.PaymentMethod,
-                CurrencyCode: data?.CurrencyCode,
-                IsFulfilled: data?.IsFulfilled,
-                Amount: data?.Amount,
-                Charges: data?.Charges,
-                AmountAfterCharges: data?.AmountAfterCharges,
-                Date: data?.Date,
-                RawResponseCode: response.ResponseCode,
-                RawMessage: response.Message));
+#pragma warning disable CA1031 // We intentionally convert all exceptions into OperationResult failures for transport resiliency
+        catch (Exception ex)
+        {
+            return OperationResult<TransactionStatusResult>.Failure(
+                Error.Problem("Hubtel.Http.Status",
+                        "Failed to contact Hubtel status endpoint.")
+                    .WithMetadata("exception", ex.GetType().Name));
+        }
+#pragma warning restore CA1031
     }
 }
 

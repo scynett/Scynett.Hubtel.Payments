@@ -79,7 +79,10 @@ public sealed class ReceiveMoneyCallbackProcessor(
                 callback.Data.ClientReference);
 
             return OperationResult<ReceiveMoneyCallbackResult>.Failure(
-                Error.Problem("Hubtel.Callback.Exception", "An error occurred while processing the Hubtel callback."));
+                Error.Problem(
+                        "Hubtel.Callback.Exception",
+                        "An error occurred while processing the Hubtel callback.")
+                    .WithMetadata("exception", ex.GetType().Name));
         }
     }
 }

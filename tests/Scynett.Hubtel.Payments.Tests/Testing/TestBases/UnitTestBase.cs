@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Scynett.Hubtel.Payments.Tests.Testing;
+namespace Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 [SuppressMessage("Design", "CA1515", Justification = "Shared across xUnit test classes that must remain public.")]
 [Trait("Category", "Unit")]

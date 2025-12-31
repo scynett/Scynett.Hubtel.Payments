@@ -6,9 +6,9 @@ using Microsoft.Extensions.Options;
 
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
-using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
 
 namespace Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
 
@@ -126,3 +126,5 @@ internal sealed class PendingTransactionsWorker(
         || status.Equals("unpaid", StringComparison.OrdinalIgnoreCase)
         || status.Equals("refunded", StringComparison.OrdinalIgnoreCase);
 }
+
+

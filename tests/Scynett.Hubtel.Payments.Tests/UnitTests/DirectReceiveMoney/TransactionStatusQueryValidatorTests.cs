@@ -3,7 +3,7 @@ using FluentAssertions;
 using FluentValidation.TestHelper;
 
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
-using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 

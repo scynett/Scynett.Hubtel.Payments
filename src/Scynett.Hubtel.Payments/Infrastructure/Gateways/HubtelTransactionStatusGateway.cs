@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
 
 namespace Scynett.Hubtel.Payments.Infrastructure.Gateways;
@@ -62,3 +62,4 @@ internal sealed class HubtelTransactionStatusGateway(
                 RawMessage: response.Message));
     }
 }
+

@@ -7,10 +7,10 @@ using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
-using Scynett.Hubtel.Payments.Public.DependencyInjection;
-using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.DependencyInjection;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 
@@ -112,3 +112,5 @@ public sealed class HubtelServiceRegistrationTests : UnitTestBase
         return (HttpClient)httpClientField!.GetValue(refitClient)!;
     }
 }
+
+

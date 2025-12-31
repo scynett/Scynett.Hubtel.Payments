@@ -1,7 +1,7 @@
 ﻿using AutoFixture;
 using AutoFixture.AutoMoq;
 
-namespace Scynett.Hubtel.Payments.Tests.Testing;
+namespace Scynett.Hubtel.Payments.Tests.Testing.Fixtures;
 
 internal static class FixtureFactory
 {

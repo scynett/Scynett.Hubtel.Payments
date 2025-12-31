@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
-using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 

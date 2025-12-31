@@ -1,12 +1,12 @@
-﻿
+
 
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
-using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
 
-namespace Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
+namespace Scynett.Hubtel.Payments.DirectReceiveMoney;
 
 internal sealed class DirectReceiveMoney(
     InitiateReceiveMoneyProcessor initiateProcessor,

@@ -1,6 +1,6 @@
 using System;
 
-namespace Scynett.Hubtel.Payments.Infrastructure.Configuration;
+namespace Scynett.Hubtel.Payments.Options;
 
 
 public class HubtelOptions
@@ -111,3 +111,4 @@ public class ResilienceSettings
     /// </summary>
     public int CircuitBreakerBreakDurationSeconds { get; set; } = 30;
 }
+

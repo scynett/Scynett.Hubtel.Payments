@@ -5,11 +5,11 @@ using Microsoft.Extensions.Options;
 using Moq;
 
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Gateways;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney.Dtos;
-using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 
@@ -100,8 +100,8 @@ public sealed class HubtelTransactionStatusGatewayTests : UnitTestBase
         HubtelOptions hubtelOptions)
         => new(
             api.Object,
-            Options.Create(directOptions),
-            Options.Create(hubtelOptions));
+            Microsoft.Extensions.Options.Options.Create(directOptions),
+            Microsoft.Extensions.Options.Options.Create(hubtelOptions));
 
     private static TransactionStatusResponseDto CreateSuccessResponse()
         => new()
@@ -115,3 +115,5 @@ public sealed class HubtelTransactionStatusGatewayTests : UnitTestBase
             }
         };
 }
+
+

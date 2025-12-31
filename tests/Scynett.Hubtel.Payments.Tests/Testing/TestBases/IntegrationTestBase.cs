@@ -1,13 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
-using Scynett.Hubtel.Payments.Public.DependencyInjection;
+using Scynett.Hubtel.Payments.Options;
+using Scynett.Hubtel.Payments.DependencyInjection;
 
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Scynett.Hubtel.Payments.Tests.Testing;
+namespace Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 
 [Trait("Category", "Integration")]
@@ -55,3 +55,5 @@ internal class IntegrationTestBase : IDisposable
         if (Services is IDisposable d) d.Dispose();
     }
 }
+
+

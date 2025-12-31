@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 using FluentValidation;
 
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
 
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
@@ -180,3 +180,4 @@ internal sealed class InitiateReceiveMoneyProcessor(
         return $"{prefix}***{suffix}";
     }
 }
+

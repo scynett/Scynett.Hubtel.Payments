@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
 using Polly;
 
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 
 using System.Net;
 

@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
-using Scynett.Hubtel.Payments.Public.DependencyInjection;
+using Scynett.Hubtel.Payments.DependencyInjection;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.DependencyInjection;
 

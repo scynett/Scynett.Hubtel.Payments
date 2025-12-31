@@ -1,4 +1,4 @@
-﻿namespace Scynett.Hubtel.Payments.Infrastructure.Configuration;
+namespace Scynett.Hubtel.Payments.Options;
 
 
 internal sealed class HubtelResilienceOptions
@@ -29,3 +29,4 @@ internal sealed class HubtelResilienceOptions
         public int AttemptTimeoutSeconds { get; init; } = 10;
     }
 }
+

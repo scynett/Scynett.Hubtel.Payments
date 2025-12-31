@@ -10,9 +10,9 @@ using Moq;
 
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
-using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 
@@ -103,8 +103,8 @@ public sealed class InitiateReceiveMoneyProcessorTests : UnitTestBase
         return new InitiateReceiveMoneyProcessor(
             gateway.Object,
             pendingStore.Object,
-            Options.Create(hubtelOptions),
-            Options.Create(directOptions),
+            Microsoft.Extensions.Options.Options.Create(hubtelOptions),
+            Microsoft.Extensions.Options.Options.Create(directOptions),
             validator.Object,
             logger.Object);
     }
@@ -115,3 +115,5 @@ public sealed class InitiateReceiveMoneyProcessorTests : UnitTestBase
             Message: "Successful",
             TransactionId: "txn-123");
 }
+
+

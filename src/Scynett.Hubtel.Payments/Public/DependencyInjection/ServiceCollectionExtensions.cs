@@ -13,14 +13,14 @@ using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 using Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Gateways;
 using Scynett.Hubtel.Payments.Infrastructure.Http;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
-using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
 
-namespace Scynett.Hubtel.Payments.Public.DependencyInjection;
+namespace Scynett.Hubtel.Payments.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
@@ -100,3 +100,6 @@ public static class ServiceCollectionExtensions
         return TimeSpan.FromSeconds(value);
     }
 }
+
+
+

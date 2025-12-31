@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments.AspNetCore", "src\Scynett.Hubtel.Payments.AspNetCore\Scynett.Hubtel.Payments.AspNetCore.csproj", "{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sample", "Sample", "{D8A929E6-FE19-4C4A-9BC4-E344484A314C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

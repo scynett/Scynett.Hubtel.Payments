@@ -14,10 +14,10 @@ using Moq;
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 using Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
-using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
-using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 
@@ -110,8 +110,10 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
         direct.Verify(x => x.CheckStatusAsync(It.IsAny<TransactionStatusQuery>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task ExecuteAsync_ShouldRemoveTransaction_WhenStatusIsFinalSuccess()
+    [Theory]
+    [InlineData("Paid")]
+    [InlineData("Success")]
+    public async Task ExecuteAsync_ShouldRemoveTransaction_WhenStatusIsFinalSuccess(string status)
     {
         var store = new Mock<IPendingTransactionsStore>();
         store.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -122,7 +124,7 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
 
         var direct = new Mock<IDirectReceiveMoney>();
         direct.Setup(x => x.CheckStatusAsync(It.IsAny<TransactionStatusQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(SuccessResult("Paid"));
+            .ReturnsAsync(SuccessResult(status));
 
         using var worker = CreateWorker(store.Object, direct.Object);
 
@@ -131,8 +133,31 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
         store.Verify(s => s.RemoveAsync("txn-4", It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Theory]
+    [InlineData("Unpaid")]
+    [InlineData("Refunded")]
+    public async Task ExecuteAsync_ShouldRemoveTransaction_WhenStatusIsFinalFailure(string status)
+    {
+        var store = new Mock<IPendingTransactionsStore>();
+        store.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                CreateTransaction("txn-final")
+            });
+
+        var direct = new Mock<IDirectReceiveMoney>();
+        direct.Setup(x => x.CheckStatusAsync(It.IsAny<TransactionStatusQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SuccessResult(status));
+
+        using var worker = CreateWorker(store.Object, direct.Object);
+
+        await worker.ProcessBatchAsync(CancellationToken.None);
+
+        store.Verify(s => s.RemoveAsync("txn-final", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact]
-    public async Task ExecuteAsync_ShouldRemoveTransaction_WhenStatusIsFinalFailure()
+    public async Task ExecuteAsync_ShouldNotRemoveTransaction_WhenStatusIsStillPending()
     {
         var store = new Mock<IPendingTransactionsStore>();
         store.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -143,17 +168,17 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
 
         var direct = new Mock<IDirectReceiveMoney>();
         direct.Setup(x => x.CheckStatusAsync(It.IsAny<TransactionStatusQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(SuccessResult("Failed"));
+            .ReturnsAsync(SuccessResult("Processing"));
 
         using var worker = CreateWorker(store.Object, direct.Object);
 
         await worker.ProcessBatchAsync(CancellationToken.None);
 
-        store.Verify(s => s.RemoveAsync("txn-5", It.IsAny<CancellationToken>()), Times.Once);
+        store.Verify(s => s.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldKeepTransaction_WhenStatusIsNonFinal()
+    public async Task ExecuteAsync_ShouldNotRemoveTransaction_WhenStatusIsUnknown()
     {
         var store = new Mock<IPendingTransactionsStore>();
         store.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -257,7 +282,7 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
         return new PendingTransactionsWorker(
             store,
             directReceiveMoney,
-            Options.Create(workerOptions ?? new PendingTransactionsWorkerOptions
+            Microsoft.Extensions.Options.Options.Create(workerOptions ?? new PendingTransactionsWorkerOptions
             {
                 CallbackGracePeriod = TimeSpan.FromMinutes(1),
                 PollInterval = TimeSpan.Zero
@@ -285,3 +310,6 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
                 RawResponseCode: "0000",
                 RawMessage: "ok"));
 }
+
+
+

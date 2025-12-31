@@ -1,4 +1,4 @@
-﻿namespace Scynett.Hubtel.Payments.Infrastructure.Configuration;
+namespace Scynett.Hubtel.Payments.Options;
 
 public sealed class DirectReceiveMoneyOptions
 {

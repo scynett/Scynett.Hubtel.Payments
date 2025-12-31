@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Scynett.Hubtel.Payments.Infrastructure.Configuration;
+namespace Scynett.Hubtel.Payments.Options;
 
 public sealed class PendingTransactionsWorkerOptions
 {

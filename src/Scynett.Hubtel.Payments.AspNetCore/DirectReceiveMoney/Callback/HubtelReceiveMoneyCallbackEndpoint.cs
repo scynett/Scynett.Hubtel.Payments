@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
-using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.DirectReceiveMoney.Callback;
 

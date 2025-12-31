@@ -13,10 +13,11 @@ using Moq;
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 using Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
-using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 
@@ -139,7 +140,7 @@ public sealed class PendingTransactionsWorkerResilienceTests : UnitTestBase
             => new(
                 store,
                 directReceiveMoney,
-                Options.Create(options ?? new PendingTransactionsWorkerOptions
+                Microsoft.Extensions.Options.Options.Create(options ?? new PendingTransactionsWorkerOptions
                 {
                     CallbackGracePeriod = TimeSpan.Zero,
                     PollInterval = TimeSpan.Zero
@@ -164,3 +165,6 @@ public sealed class PendingTransactionsWorkerResilienceTests : UnitTestBase
                     RawMessage: "ok"));
     }
 }
+
+
+

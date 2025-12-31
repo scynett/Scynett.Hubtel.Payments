@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 
-using Scynett.Hubtel.Payments.Infrastructure.Configuration;
+using Scynett.Hubtel.Payments.Options;
 
 using System.Net.Http.Headers;
 using System.Text;
@@ -25,3 +25,4 @@ internal sealed class HubtelAuthHandler(IOptions<HubtelOptions> options)
         return base.SendAsync(request, cancellationToken);
     }
 }
+

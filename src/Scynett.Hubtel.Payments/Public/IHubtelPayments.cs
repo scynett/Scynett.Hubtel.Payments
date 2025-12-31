@@ -1,7 +1,6 @@
-﻿using Scynett.Hubtel.Payments.Public.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
 
-namespace Scynett.Hubtel.Payments.Public;
-
+namespace Scynett.Hubtel.Payments;
 
 /// <summary>
 /// Root entry point for all Hubtel payment capabilities.

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Scynett.Hubtel.Payments.Tests.Testing;
+namespace Scynett.Hubtel.Payments.Tests.Testing.Attributes;
 
 internal sealed class InlineAutoMoqDataAttribute : InlineAutoDataAttribute
 {

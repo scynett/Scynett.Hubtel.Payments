@@ -1,176 +1,161 @@
 # Scynett.Hubtel.Payments
 
-A clean, modern, fully async .NET 9 SDK for integrating Hubtel Mobile Money payments (Receive Money, Status Check, Callbacks) with built-in CQRS, vertical slices, and extensible storage.
+A lightweight .NET SDK that wraps Hubtel's Direct Receive Money endpoints (initiate, callbacks, and status checks) with opinionated validation, hosted background workers, and DI-friendly abstractions.
 
-## Features
+> Targets **.NET 9/10** and is published as the `Scynett.Hubtel.Payments` and `Scynett.Hubtel.Payments.AspNetCore` NuGet packages.
 
-- ✅ **CQRS + Vertical Slices Architecture**: Clean separation of concerns with commands, queries, and handlers
-- ✅ **ReceiveMoney Operations**: Init, Callback processing, and Status checking
-- ✅ **Result<T> Pattern**: Type-safe error handling without exceptions
-- ✅ **ASP.NET Core Integration**: DI extensions, callback endpoints, and background workers
-- ✅ **Pending Transactions Worker**: Automatic status polling for pending transactions
-- ✅ **.NET 9 Support**: Built with the latest .NET framework
+## Highlights
 
-## Projects
+- **Unified facade** - `IDirectReceiveMoney` exposes `InitiateAsync`, `HandleCallbackAsync`, and `CheckStatusAsync`, each returning the SDK's `OperationResult<T>` for predictable success/failure envelopes.
+- **Refit-powered gateways** - strongly typed clients for Hubtel's Receive Money + Transaction Status APIs with Basic-auth handler, configurable base addresses, and pluggable resilience.
+- **Hosted background worker** - `PendingTransactionsWorker` polls stored transactions after a grace period so you always get a final state even when callbacks are missed.
+- **Ready-to-use storage** - ships with an in-memory `IPendingTransactionsStore` and extension points for Redis/SQL/custom stores.
+- **ASP.NET Core friendly** - a single `AddHubtelPayments(...)` registration wires validators, processors, hosted worker, and Refit clients; the optional ASP.NET Core package re-exports the same registration.
 
-### Scynett.Hubtel.Payments
-
-Core SDK library containing:
-- `HubtelOptions`: Configuration for Hubtel API credentials
-- `Result<T>` and `Error`: Type-safe result pattern
-- `IReceiveMoneyService`: Service for initiating and processing mobile money payments
-- `IHubtelStatusService`: Service for checking transaction status
-- `IPendingTransactionsStore`: Interface for storing pending transactions (with in-memory implementation)
-
-### Scynett.Hubtel.Payments.AspNetCore
-
-ASP.NET Core integration library containing:
-- DI extension methods (`AddHubtelPayments`)
-- Callback endpoint mappings (`MapHubtelCallbacks`)
-- Background worker for checking pending transactions
-
-## Installation
+## Packages
 
 ```bash
 dotnet add package Scynett.Hubtel.Payments
-dotnet add package Scynett.Hubtel.Payments.AspNetCore
+dotnet add package Scynett.Hubtel.Payments.AspNetCore   # optional convenience wrapper
 ```
 
-## Configuration
+## Quickstart
 
-Add Hubtel settings to your `appsettings.json`:
-
-```json
-{
-  "Hubtel": {
-    "ClientId": "your-client-id",
-    "ClientSecret": "your-client-secret",
-    "MerchantAccountNumber": "your-merchant-account",
-    "BaseUrl": "https://api.hubtel.com",
-    "TimeoutSeconds": 30
-  }
-}
-```
-
-## Usage
-
-### 1. Register Services
-
-In your `Program.cs`:
+### 1. Configure options & register services
 
 ```csharp
-using Scynett.Hubtel.Payments.AspNetCore.Extensions;
-using Scynett.Hubtel.Payments.AspNetCore.Endpoints;
+using Scynett.Hubtel.Payments.Options;
+using Scynett.Hubtel.Payments.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Hubtel Payments SDK
-builder.Services.AddHubtelPayments(builder.Configuration);
+builder.Services.AddOptions<HubtelOptions>()
+    .Bind(builder.Configuration.GetSection(HubtelOptions.SectionName));
+
+builder.Services.AddOptions<DirectReceiveMoneyOptions>().Configure(o =>
+{
+    o.PosSalesId = "POS-123"; // Hubtel POS / Merchant ID
+});
+
+builder.Services.AddHubtelPayments(worker =>
+{
+    worker.CallbackGracePeriod = TimeSpan.FromMinutes(5);
+    worker.PollInterval = TimeSpan.FromSeconds(30);
+    worker.BatchSize = 200;
+});
 
 var app = builder.Build();
-
-// Map Hubtel callback endpoint
-app.MapHubtelCallbacks("/api/hubtel/callback");
-
 app.Run();
 ```
 
-### 2. Initialize Payment
+The ASP.NET Core package exposes `services.AddHubtelPaymentsAspNetCore()` if you prefer a single call that forwards to the same registration.
+
+### 2. Initiate a payment
 
 ```csharp
-using Scynett.Hubtel.Payments.Features.ReceiveMoney;
+using Microsoft.AspNetCore.Mvc;
+using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
+using Scynett.Hubtel.Payments.DirectReceiveMoney;
 
-public class PaymentController : ControllerBase
+[ApiController]
+[Route("api/payments")]
+public class PaymentsController : ControllerBase
 {
-    private readonly IReceiveMoneyService _receiveMoneyService;
+    private readonly IDirectReceiveMoney _direct;
 
-    public PaymentController(IReceiveMoneyService receiveMoneyService)
+    public PaymentsController(IDirectReceiveMoney direct) => _direct = direct;
+
+    [HttpPost("initiate")]
+    public async Task<IActionResult> Initiate([FromBody] InitiateReceiveMoneyRequest request, CancellationToken ct)
     {
-        _receiveMoneyService = receiveMoneyService;
-    }
-
-    [HttpPost("payments/init")]
-    public async Task<IActionResult> InitPayment([FromBody] PaymentRequest request)
-    {
-        var command = new InitReceiveMoneyCommand(
-            CustomerName: request.CustomerName,
-            CustomerMobileNumber: request.PhoneNumber,
-            Channel: "mtn-gh", // or "vodafone-gh", "tigo-gh"
-            Amount: request.Amount,
-            Description: request.Description,
-            ClientReference: Guid.NewGuid().ToString(),
-            PrimaryCallbackUrl: "https://yourapp.com/api/hubtel/callback"
-        );
-
-        var result = await _receiveMoneyService.InitAsync(command);
-
-        if (result.IsFailure)
-        {
-            return BadRequest(result.Error);
-        }
-
-        return Ok(result.Value);
+        var result = await _direct.InitiateAsync(request, ct);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
     }
 }
 ```
 
-### 3. Check Transaction Status
+`InitiateReceiveMoneyRequest` matches Hubtel's payload (customer details, channel `mtn-gh | vodafone-gh | tigo-gh`, amount, callback URL, and client reference). Validation rules are enforced automatically.
+
+### 3. Handle callbacks
 
 ```csharp
-using Scynett.Hubtel.Payments.Features.Status;
+using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
 
-[HttpGet("payments/{transactionId}/status")]
-public async Task<IActionResult> CheckStatus(
-    string transactionId,
-    [FromServices] IHubtelStatusService statusService)
+app.MapPost("/hubtel/callback", async (
+    [FromBody] ReceiveMoneyCallbackRequest payload,
+    IDirectReceiveMoney direct,
+    CancellationToken ct) =>
 {
-    var query = new CheckStatusQuery(transactionId);
-    var result = await statusService.CheckStatusAsync(query);
-
-    if (result.IsFailure)
-    {
-        return NotFound(result.Error);
-    }
-
-    return Ok(result.Value);
-}
+    var result = await direct.HandleCallbackAsync(payload, ct);
+    return result.IsSuccess ? Results.Ok() : Results.BadRequest(result.Error);
+});
 ```
 
-## Architecture
+When the callback's response code is final, the worker removes the transaction from whatever `IPendingTransactionsStore` is registered.
 
-### CQRS + Vertical Slices
-
-Each feature is organized as a vertical slice with:
-- **Commands**: `InitReceiveMoneyCommand`, `ReceiveMoneyCallbackCommand`
-- **Queries**: `CheckStatusQuery`
-- **Responses**: `InitReceiveMoneyResponse`, `CheckStatusResponse`
-- **Services**: `ReceiveMoneyService`, `HubtelStatusService`
-
-### Background Worker
-
-The `PendingTransactionsWorker` automatically:
-1. Polls pending transactions every 5 minutes
-2. Checks their status using the Hubtel API
-3. Processes completed transactions (success/failed)
-4. Removes them from the pending store
-
-## Extensibility
-
-### Custom Pending Transactions Store
-
-Implement `IPendingTransactionsStore` for persistent storage:
+### 4. (Optional) Manually query status
 
 ```csharp
-public class RedisPendingTransactionsStore : IPendingTransactionsStore
-{
-    // Implementation using Redis
-}
+using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 
-// Register in DI
+app.MapGet("/payments/{clientReference}/status", async (
+    string clientReference,
+    IDirectReceiveMoney direct,
+    CancellationToken ct) =>
+{
+    var result = await direct.CheckStatusAsync(
+        new TransactionStatusQuery(ClientReference: clientReference),
+        ct);
+
+    return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
+});
+```
+
+The hosted worker already performs periodic checks for pending items, but you can expose manual status lookups whenever you need them.
+
+## Configuration reference
+
+| Option | Description |
+|--------|-------------|
+| `HubtelOptions.ClientId` / `ClientSecret` | API credentials used by the Basic-auth delegating handler. |
+| `HubtelOptions.MerchantAccountNumber` | Merchant POS/Sales ID (fallback when `DirectReceiveMoneyOptions.PosSalesId` is empty). |
+| `HubtelOptions.ReceiveMoneyBaseAddress` / `TransactionStatusBaseAddress` | Override Hubtel endpoints (defaults to Hubtel production URLs). |
+| `HubtelOptions.TimeoutSeconds` | Applied to both Refit `HttpClient` instances. |
+| `DirectReceiveMoneyOptions.PosSalesId` | Explicit POS Sales ID for initiate/status calls. |
+| `PendingTransactionsWorkerOptions.CallbackGracePeriod` | Minimum wait before contacting Hubtel after initiation. |
+| `PendingTransactionsWorkerOptions.PollInterval` | Delay between worker batches (also used by `ExecuteAsync`). |
+| `PendingTransactionsWorkerOptions.BatchSize` | Number of pending transactions processed per batch. |
+
+All options are `IOptions<T>` friendly and can be bound from configuration or populated programmatically.
+
+## Pending transactions store
+
+The SDK registers `IPendingTransactionsStore` via `InMemoryPendingTransactionsStore` by default. Swap it for a persistent implementation by registering your type *before* calling `AddHubtelPayments`:
+
+```csharp
 services.AddSingleton<IPendingTransactionsStore, RedisPendingTransactionsStore>();
+services.AddHubtelPayments();
 ```
+
+The worker simply calls `GetAllAsync`, `AddAsync`, and `RemoveAsync`, so any durable medium (SQL, Redis, Cosmos DB, etc.) works.
+
+## Public API surface
+
+- `InitiateReceiveMoneyRequest` -> `OperationResult<InitiateReceiveMoneyResult>` (Hubtel response + decision metadata).
+- `ReceiveMoneyCallbackRequest` -> `OperationResult<ReceiveMoneyCallbackResult>` (ensures payload is valid, removes pending when final).
+- `TransactionStatusQuery` -> `OperationResult<TransactionStatusResult>` (supports client reference, Hubtel transaction ID, or network transaction ID).
+
+Every command/result uses the shared `OperationResult<T>` + `Error` types so you can pattern match on `.IsSuccess` without exceptions.
+
+## Testing & samples
+
+The repository includes extensive unit and WireMock-backed integration tests under `tests/Scynett.Hubtel.Payments.Tests`. Use them as a reference for custom stubs, DI bootstrapping, or integration pipelines.
 
 ## License
 
 MIT
+
+
+
+
 

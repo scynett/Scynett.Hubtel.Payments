@@ -3,7 +3,7 @@ using FluentAssertions;
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
-using Scynett.Hubtel.Payments.Tests.Testing;
+using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
 

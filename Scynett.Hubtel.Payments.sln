@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments.Asp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sample", "Sample", "{D8A929E6-FE19-4C4A-9BC4-E344484A314C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scynett.Hubtel.Payments.Storage.PostgreSql", "src\Scynett.Hubtel.Payments.Storage.PostgreSql\Scynett.Hubtel.Payments.Storage.PostgreSql.csproj", "{FAAFD75B-DB3E-35F1-2F6B-9C9F2F8227F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAAFD75B-DB3E-35F1-2F6B-9C9F2F8227F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAAFD75B-DB3E-35F1-2F6B-9C9F2F8227F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAAFD75B-DB3E-35F1-2F6B-9C9F2F8227F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAAFD75B-DB3E-35F1-2F6B-9C9F2F8227F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +54,7 @@ Global
 		{547DB6C4-3DCD-459D-BFA1-289CAFAB228D} = {8A43AA99-E026-4446-BB81-9CF8D2E34530}
 		{16F0B431-27D0-CABB-1235-11595D16D182} = {41CB4EAE-634C-4DAD-AE10-90FC08A83A37}
 		{9429BD97-6275-AE74-1DC3-A7EE95ED8D79} = {41CB4EAE-634C-4DAD-AE10-90FC08A83A37}
+		{FAAFD75B-DB3E-35F1-2F6B-9C9F2F8227F8} = {41CB4EAE-634C-4DAD-AE10-90FC08A83A37}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E7C5049-183E-4AF8-9070-14FC91FCABC1}

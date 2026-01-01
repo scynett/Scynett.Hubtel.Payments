@@ -9,14 +9,15 @@ A lightweight .NET SDK that wraps Hubtel's Direct Receive Money endpoints (initi
 - **Unified facade** - `IDirectReceiveMoney` exposes `InitiateAsync`, `HandleCallbackAsync`, and `CheckStatusAsync`, each returning the SDK's `OperationResult<T>` for predictable success/failure envelopes.
 - **Refit-powered gateways** - strongly typed clients for Hubtel's Receive Money + Transaction Status APIs with Basic-auth handler, configurable base addresses, and pluggable resilience.
 - **Hosted background worker** - `PendingTransactionsWorker` polls stored transactions after a grace period so you always get a final state even when callbacks are missed.
-- **Ready-to-use storage** - ships with an in-memory `IPendingTransactionsStore` and extension points for Redis/SQL/custom stores.
+- **Ready-to-use storage** - ships with an in-memory `IPendingTransactionsStore` and extension points for Redis/SQL/custom stores. **PostgreSQL storage** available via the `Scynett.Hubtel.Payments.Storage.PostgreSql` package.
 - **ASP.NET Core friendly** - a single `AddHubtelPayments(...)` registration wires validators, processors, hosted worker, and Refit clients; the optional ASP.NET Core package re-exports the same registration.
 
 ## Packages
 
 ```bash
 dotnet add package Scynett.Hubtel.Payments
-dotnet add package Scynett.Hubtel.Payments.AspNetCore   # optional convenience wrapper
+dotnet add package Scynett.Hubtel.Payments.AspNetCore          # optional convenience wrapper
+dotnet add package Scynett.Hubtel.Payments.Storage.PostgreSql  # PostgreSQL persistent storage
 ```
 
 ## Quickstart
@@ -172,6 +173,101 @@ services.AddHubtelPayments();
 
 The worker simply calls `GetAllAsync`, `AddAsync`, and `RemoveAsync`, so any durable medium (SQL, Redis, Cosmos DB, etc.) works.
 
+### PostgreSQL storage (recommended for production)
+
+For production deployments, use the `Scynett.Hubtel.Payments.Storage.PostgreSql` package which provides durable storage that survives application restarts:
+
+```bash
+dotnet add package Scynett.Hubtel.Payments.Storage.PostgreSql
+```
+
+**Option 1: Programmatic configuration**
+
+```csharp
+using Scynett.Hubtel.Payments.Storage.PostgreSql;
+using Scynett.Hubtel.Payments.DependencyInjection;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Register PostgreSQL storage BEFORE AddHubtelPayments()
+builder.Services.AddHubtelPostgreSqlStorage(options =>
+{
+    options.ConnectionString = builder.Configuration.GetConnectionString("PostgreSql")!;
+    options.SchemaName = "hubtel";           // default
+    options.TableName = "pending_transactions"; // default
+    options.AutoCreateSchema = true;         // creates schema/table on startup
+    options.CommandTimeoutSeconds = 30;      // default
+});
+
+// Then register Hubtel payments
+builder.Services.AddHubtelPayments();
+```
+
+**Option 2: Connection string only**
+
+```csharp
+builder.Services.AddHubtelPostgreSqlStorage(
+    builder.Configuration.GetConnectionString("PostgreSql")!);
+builder.Services.AddHubtelPayments();
+```
+
+**Option 3: Bind from configuration**
+
+```csharp
+builder.Services.AddHubtelPostgreSqlStorage(builder.Configuration);
+builder.Services.AddHubtelPayments();
+```
+
+With `appsettings.json`:
+
+```json
+{
+  "Hubtel": {
+    "ClientId": "your-client-id",
+    "ClientSecret": "your-client-secret",
+    "Storage": {
+      "PostgreSql": {
+        "ConnectionString": "Host=localhost;Database=hubtel;Username=user;Password=pass",
+        "SchemaName": "hubtel",
+        "TableName": "pending_transactions",
+        "AutoCreateSchema": true,
+        "CommandTimeoutSeconds": 30
+      }
+    }
+  }
+}
+```
+
+#### PostgreSQL table schema
+
+When `AutoCreateSchema` is enabled (default), the following schema is created automatically:
+
+```sql
+CREATE SCHEMA IF NOT EXISTS "hubtel";
+
+CREATE TABLE IF NOT EXISTS "hubtel"."pending_transactions" (
+    hubtel_transaction_id VARCHAR(100) PRIMARY KEY,
+    client_reference VARCHAR(100),
+    created_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ix_pending_transactions_created_at 
+    ON "hubtel"."pending_transactions" (created_at_utc);
+```
+
+If you prefer to manage the schema manually, set `AutoCreateSchema = false` and ensure the table exists before starting the application.
+
+#### PostgreSQL configuration options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `ConnectionString` | *(required)* | PostgreSQL connection string |
+| `SchemaName` | `hubtel` | Schema name for the pending transactions table |
+| `TableName` | `pending_transactions` | Table name for storing pending transactions |
+| `AutoCreateSchema` | `true` | Whether to create schema/table on startup |
+| `CommandTimeoutSeconds` | `30` | SQL command timeout |
+
 ## Public API surface
 
 - `InitiateReceiveMoneyRequest` -> `OperationResult<InitiateReceiveMoneyResult>` (Hubtel response + decision metadata).
@@ -210,6 +306,11 @@ The repository includes extensive unit and WireMock-backed integration tests und
 ## License
 
 MIT
+
+
+
+
+
 
 
 

@@ -24,6 +24,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\src\Scynett.Hubtel.Payments.AspNetCore\Scynett.Hubtel.Payments.AspNetCore.csproj" />
+	  <ProjectReference Include="..\..\src\Scynett.Hubtel.Payments.Storage.PostgreSql\Scynett.Hubtel.Payments.Storage.PostgreSql.csproj" />
 	  <ProjectReference Include="..\..\src\Scynett.Hubtel.Payments\Scynett.Hubtel.Payments.csproj" />
 	</ItemGroup>
 

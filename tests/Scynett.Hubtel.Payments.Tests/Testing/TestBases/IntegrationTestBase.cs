@@ -40,6 +40,7 @@ internal class IntegrationTestBase : IDisposable
             options.BatchSize = 200;
 
         });
+        services.AddHubtelPaymentsWorker();
 
         configure?.Invoke(services);
 

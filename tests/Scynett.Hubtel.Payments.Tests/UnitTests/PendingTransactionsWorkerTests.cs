@@ -273,6 +273,34 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
         store.Verify(s => s.RemoveAsync("txn-10", It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldRespectBatchSize()
+    {
+        var store = new Mock<IPendingTransactionsStore>();
+        store.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                CreateTransaction("txn-11"),
+                CreateTransaction("txn-12"),
+                CreateTransaction("txn-13")
+            });
+
+        var direct = new Mock<IDirectReceiveMoney>();
+        direct.Setup(x => x.CheckStatusAsync(It.IsAny<TransactionStatusQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SuccessResult("Pending"));
+
+        using var worker = CreateWorker(store.Object, direct.Object, new PendingTransactionsWorkerOptions
+        {
+            BatchSize = 2,
+            CallbackGracePeriod = TimeSpan.Zero,
+            PollInterval = TimeSpan.Zero
+        });
+
+        await worker.ProcessBatchAsync(CancellationToken.None);
+
+        direct.Verify(x => x.CheckStatusAsync(It.IsAny<TransactionStatusQuery>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
     private static PendingTransactionsWorker CreateWorker(
         IPendingTransactionsStore store,
         IDirectReceiveMoney directReceiveMoney,

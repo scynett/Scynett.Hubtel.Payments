@@ -8,7 +8,7 @@ A lightweight .NET SDK that wraps Hubtel's Direct Receive Money endpoints (initi
 
 - **Unified facade** - `IDirectReceiveMoney` exposes `InitiateAsync`, `HandleCallbackAsync`, and `CheckStatusAsync`, each returning the SDK's `OperationResult<T>` for predictable success/failure envelopes.
 - **Refit-powered gateways** - strongly typed clients for Hubtel's Receive Money + Transaction Status APIs with Basic-auth handler, configurable base addresses, and pluggable resilience.
-- **Hosted background worker** - `PendingTransactionsWorker` polls stored transactions after a grace period so you always get a final state even when callbacks are missed.
+- **Hosted background worker (opt-in)** - call `AddHubtelPaymentsWorker()` to run `PendingTransactionsWorker`, which polls stored transactions after a grace period so you always get a final state when callbacks are missed.
 - **Ready-to-use storage** - ships with an in-memory `IPendingTransactionsStore` and extension points for Redis/SQL/custom stores. **PostgreSQL storage** available via the `Scynett.Hubtel.Payments.Storage.PostgreSql` package.
 - **ASP.NET Core friendly** - a single `AddHubtelPayments(...)` registration wires validators, processors, hosted worker, and Refit clients; the optional ASP.NET Core package re-exports the same registration.
 
@@ -38,7 +38,9 @@ builder.Services.AddOptions<DirectReceiveMoneyOptions>().Configure(o =>
     o.PosSalesId = "POS-123"; // Hubtel POS / Merchant ID
 });
 
-builder.Services.AddHubtelPayments(worker =>
+builder.Services.AddHubtelPayments();
+
+builder.Services.AddHubtelPaymentsWorker(worker =>
 {
     worker.CallbackGracePeriod = TimeSpan.FromMinutes(5);
     worker.PollInterval = TimeSpan.FromSeconds(30);
@@ -49,7 +51,7 @@ var app = builder.Build();
 app.Run();
 ```
 
-The ASP.NET Core package exposes `services.AddHubtelPaymentsAspNetCore()` if you prefer a single call that forwards to the same registration.
+The ASP.NET Core package exposes `services.AddHubtelPaymentsAspNetCore()` if you prefer a single call that forwards to the same registration; call `services.AddHubtelPaymentsWorker()` afterwards when you want the background polling worker.
 
 ### 2. Initiate a payment
 
@@ -201,8 +203,9 @@ builder.Services.AddHubtelPostgreSqlStorage(options =>
     options.CommandTimeoutSeconds = 30;      // default
 });
 
-// Then register Hubtel payments
+// Then register Hubtel payments and opt into the worker if needed
 builder.Services.AddHubtelPayments();
+builder.Services.AddHubtelPaymentsWorker();
 ```
 
 **Option 2: Connection string only**
@@ -211,6 +214,7 @@ builder.Services.AddHubtelPayments();
 builder.Services.AddHubtelPostgreSqlStorage(
     builder.Configuration.GetConnectionString("PostgreSql")!);
 builder.Services.AddHubtelPayments();
+builder.Services.AddHubtelPaymentsWorker();
 ```
 
 **Option 3: Bind from configuration**
@@ -218,6 +222,7 @@ builder.Services.AddHubtelPayments();
 ```csharp
 builder.Services.AddHubtelPostgreSqlStorage(builder.Configuration);
 builder.Services.AddHubtelPayments();
+builder.Services.AddHubtelPaymentsWorker();
 ```
 
 With `appsettings.json`:
@@ -308,8 +313,6 @@ The repository includes extensive unit and WireMock-backed integration tests und
 ## License
 
 MIT
-
-
 
 
 

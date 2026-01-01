@@ -53,6 +53,7 @@ public sealed class IntegrationFixture : IDisposable
             options.CallbackGracePeriod = TimeSpan.Zero;
             options.PollInterval = TimeSpan.FromMilliseconds(50);
         });
+        services.AddHubtelPaymentsWorker();
 
         Services = services.BuildServiceProvider(validateScopes: true);
     }

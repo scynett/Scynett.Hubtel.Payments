@@ -78,9 +78,22 @@ public static class ServiceCollectionExtensions
         if (configure is not null)
             services.Configure(configure);
 
-        services.AddHostedService<PendingTransactionsWorker>();
         services.AddHostedService<PendingTransactionsCleanupService>();
 
+        return services;
+    }
+
+    public static IServiceCollection AddHubtelPaymentsWorker(
+        this IServiceCollection services,
+        Action<PendingTransactionsWorkerOptions>? configure = null)
+    {
+        services.AddOptions<PendingTransactionsWorkerOptions>();
+        if (configure is not null)
+        {
+            services.Configure(configure);
+        }
+
+        services.AddHostedService<PendingTransactionsWorker>();
         return services;
     }
 

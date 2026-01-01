@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -55,7 +56,10 @@ internal sealed class PendingTransactionsWorker(
             var pending = await store.GetAllAsync(stoppingToken).ConfigureAwait(false);
             PendingTransactionsWorkerLogMessages.Polling(logger, pending.Count);
 
-            foreach (var transaction in pending)
+            var batchSize = options.Value.BatchSize;
+            var items = batchSize > 0 ? pending.Take(batchSize) : pending;
+
+            foreach (var transaction in items)
             {
                 if (stoppingToken.IsCancellationRequested)
                     break;

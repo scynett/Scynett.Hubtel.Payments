@@ -6,8 +6,10 @@ using System.Reflection;
 using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 using Scynett.Hubtel.Payments.Options;
+using Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.DependencyInjection;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
@@ -83,7 +85,25 @@ public sealed class HubtelServiceRegistrationTests : UnitTestBase
         statusClient.BaseAddress.Should().Be(new Uri(baseUrl));
     }
 
-    private static ServiceProvider BuildServiceProvider(Action<HubtelOptions>? configure)
+    [Fact]
+    public void ServiceRegistration_ShouldNotRegisterWorker_ByDefault()
+    {
+        using var provider = BuildServiceProvider(null);
+
+        provider.GetServices<IHostedService>()
+            .Should().NotContain(s => s is PendingTransactionsWorker);
+    }
+
+    [Fact]
+    public void ServiceRegistration_ShouldRegisterWorker_WhenOptedIn()
+    {
+        using var provider = BuildServiceProvider(null, registerWorker: true);
+
+        provider.GetServices<IHostedService>()
+            .Should().ContainSingle(s => s is PendingTransactionsWorker);
+    }
+
+    private static ServiceProvider BuildServiceProvider(Action<HubtelOptions>? configure, bool registerWorker = false)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -96,6 +116,10 @@ public sealed class HubtelServiceRegistrationTests : UnitTestBase
         });
 
         services.AddHubtelPayments();
+        if (registerWorker)
+        {
+            services.AddHubtelPaymentsWorker();
+        }
 
         return services.BuildServiceProvider();
     }

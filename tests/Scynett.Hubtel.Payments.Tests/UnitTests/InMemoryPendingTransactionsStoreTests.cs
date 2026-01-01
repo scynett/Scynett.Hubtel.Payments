@@ -7,7 +7,7 @@ using FluentAssertions;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
-namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
+namespace Scynett.Hubtel.Payments.Tests.UnitTests;
 
 [SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "ConfigureAwait not required in unit tests.")]
 public sealed class InMemoryPendingTransactionsStoreTests : UnitTestBase

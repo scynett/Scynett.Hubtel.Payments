@@ -199,6 +199,14 @@ Each `Error` exposes `ProviderCode`, `ProviderMessage`, and optional metadata en
 
 The repository includes extensive unit and WireMock-backed integration tests under `tests/Scynett.Hubtel.Payments.Tests`. Use them as a reference for custom stubs, DI bootstrapping, or integration pipelines.
 
+## Limitations / roadmap
+
+- Only Direct Receive Money + transaction status APIs are implemented; payouts and other Hubtel surfaces are not yet supported.
+- The default `IPendingTransactionsStore` is in-memory. For production you should provide a Redis/SQL implementation so pending transactions survive restarts.
+- Error codes and metadata are still evolving during the `0.x` release train; expect breaking changes until `1.0`.
+- Resilience policies are currently opt-in; future releases will expose first-class configuration for retries/circuit breaking.
+- Additional ASP.NET Core helpers (attribute routing, outbox samples) are planned but not yet available.
+
 ## License
 
 MIT

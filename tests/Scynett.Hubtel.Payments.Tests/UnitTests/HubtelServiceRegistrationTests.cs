@@ -12,7 +12,7 @@ using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.DependencyInjection;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
-namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
+namespace Scynett.Hubtel.Payments.Tests.UnitTests;
 
 public sealed class HubtelServiceRegistrationTests : UnitTestBase
 {

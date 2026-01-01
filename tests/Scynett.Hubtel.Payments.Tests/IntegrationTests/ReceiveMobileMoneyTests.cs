@@ -1,16 +1,11 @@
-using System.Threading;
-using System.Threading.Tasks;
-
 using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
 using Scynett.Hubtel.Payments.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Tests.Fixtures;
 using Scynett.Hubtel.Payments.Tests.Stubs;
-using Scynett.Hubtel.Payments.Tests.Testing.Builders;
 
 namespace Scynett.Hubtel.Payments.Tests.IntegrationTests;
 
@@ -40,7 +35,7 @@ public sealed class ReceiveMobileMoneyTests
     }
 
     [Fact]
-    public async Task CheckStatus_ShouldReturnPaid_WhenWireMockReportsPaid()
+    public async Task CheckStatus_ShouldReturnPaid_WhenHubtelReportsPaid()
     {
         using var scope = _fixture.Services.CreateScope();
         var direct = scope.ServiceProvider.GetRequiredService<IDirectReceiveMoney>();

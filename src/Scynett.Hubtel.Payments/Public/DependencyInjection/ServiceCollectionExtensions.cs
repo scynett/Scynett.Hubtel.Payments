@@ -4,6 +4,7 @@ using FluentValidation;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
 using Refit;
@@ -55,7 +56,8 @@ public static class ServiceCollectionExtensions
                     nameof(HubtelOptions.ReceiveMoneyBaseAddress));
                 client.Timeout = ResolveTimeout(options.TimeoutSeconds);
             })
-            .AddHttpMessageHandler<HubtelAuthHandler>();
+            .AddHttpMessageHandler<HubtelAuthHandler>()
+            .AddHubtelResilience();
 
         services.AddRefitClient<IHubtelTransactionStatusApi>()
             .ConfigureHttpClient((sp, client) =>
@@ -66,9 +68,11 @@ public static class ServiceCollectionExtensions
                     nameof(HubtelOptions.TransactionStatusBaseAddress));
                 client.Timeout = ResolveTimeout(options.TimeoutSeconds);
             })
-            .AddHttpMessageHandler<HubtelAuthHandler>();
+            .AddHttpMessageHandler<HubtelAuthHandler>()
+            .AddHubtelResilience();
 
         services.AddOptions<PendingTransactionsWorkerOptions>();
+        services.AddOptions<HubtelResilienceOptions>();
         if (configure is not null)
             services.Configure(configure);
 
@@ -98,6 +102,16 @@ public static class ServiceCollectionExtensions
     {
         var value = timeoutSeconds <= 0 ? 30 : timeoutSeconds;
         return TimeSpan.FromSeconds(value);
+    }
+
+    private static IHttpClientBuilder AddHubtelResilience(this IHttpClientBuilder builder)
+    {
+        builder.Services
+            .AddOptions<HttpStandardResilienceOptions>(builder.Name)
+            .Configure<IOptions<HubtelResilienceOptions>>((options, cfg) => HubtelHttpPolicies.Apply(options, cfg.Value));
+
+        builder.AddStandardResilienceHandler();
+        return builder;
     }
 }
 

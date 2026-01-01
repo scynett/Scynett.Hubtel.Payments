@@ -14,7 +14,7 @@ using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
-namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
+namespace Scynett.Hubtel.Payments.Tests.UnitTests;
 
 public sealed class InitiateReceiveMoneyProcessorTests : UnitTestBase
 {

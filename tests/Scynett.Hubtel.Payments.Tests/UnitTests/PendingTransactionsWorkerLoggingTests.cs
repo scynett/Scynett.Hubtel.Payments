@@ -18,7 +18,7 @@ using Scynett.Hubtel.Payments.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Tests.Testing;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
-namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
+namespace Scynett.Hubtel.Payments.Tests.UnitTests;
 
 public sealed class PendingTransactionsWorkerLoggingTests : UnitTestBase
 {

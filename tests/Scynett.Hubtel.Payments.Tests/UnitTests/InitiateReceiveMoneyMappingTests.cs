@@ -5,7 +5,7 @@ using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
-namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
+namespace Scynett.Hubtel.Payments.Tests.UnitTests;
 
 public sealed class InitiateReceiveMoneyMappingTests : UnitTestBase
 {

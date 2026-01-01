@@ -19,7 +19,7 @@ using Scynett.Hubtel.Payments.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Tests.Testing;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
-namespace Scynett.Hubtel.Payments.Tests.UnitTests.DirectReceiveMoney;
+namespace Scynett.Hubtel.Payments.Tests.UnitTests;
 
 [SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "Unit tests run without a synchronization context.")]
 public sealed class PendingTransactionsWorkerResilienceTests : UnitTestBase

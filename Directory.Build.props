@@ -38,6 +38,14 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
+  <!-- Centralised versioning (SemVer, tag-driven) -->
+  <PropertyGroup>
+    <PackageVersion Condition="'$(PackageVersion)' == '' and '$(PACKAGE_VERSION)' != ''">$(PACKAGE_VERSION)</PackageVersion>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">0.1.0-local</PackageVersion>
+    <Version Condition="'$(Version)' == ''">$(PackageVersion)</Version>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(PackageVersion)</InformationalVersion>
+  </PropertyGroup>
+
   <!-- Apply to all projects -->
   <ItemGroup>
     <Using Include="System.Diagnostics.CodeAnalysis" />

@@ -12,6 +12,52 @@ A lightweight .NET SDK that wraps Hubtel's Direct Receive Money endpoints (initi
 - **Ready-to-use storage** - ships with an in-memory `IPendingTransactionsStore` and extension points for Redis/SQL/custom stores. **PostgreSQL storage** available via the `Scynett.Hubtel.Payments.Storage.PostgreSql` package.
 - **ASP.NET Core friendly** - a single `AddHubtelPayments(...)` registration wires validators, processors, hosted worker, and Refit clients; the optional ASP.NET Core package re-exports the same registration.
 
+## Architecture at a glance
+
+### Component view
+
+```mermaid
+graph TD
+    App["Your app / worker"] -->|IDirectReceiveMoney| Facade["DirectReceiveMoney facade"]
+    Facade --> Initiate["Initiate Processor"]
+    Initiate --> Store["IPendingTransactionsStore"]
+    Initiate --> Gateway["Hubtel Receive Money Gateway (Refit)"]
+    Gateway --> HubtelAPI["Hubtel Receive Money API"]
+    HubtelAPI --> Callback["ASP.NET callback endpoint"]
+    Callback --> CallbackProcessor["ReceiveMoneyCallbackProcessor"]
+    CallbackProcessor --> Audit["ICallbackAuditStore"]
+    CallbackProcessor --> Store
+    Worker["PendingTransactionsWorker"] --> Store
+    Worker --> Status["TransactionStatusProcessor"]
+    Status --> StatusGateway["Hubtel Status Gateway"]
+    StatusGateway --> HubtelStatus["Hubtel Status API"]
+```
+
+### Initiate + callback sequence
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Processor as Initiate Processor
+    participant Store as Pending Store
+    participant Gateway as Hubtel Gateway
+    participant Hubtel as Hubtel API
+    participant Callback as ASP.NET Callback Endpoint
+    participant CallbackProc as Callback Processor
+
+    App->>Processor: InitiateAsync(request)
+    Processor->>Gateway: POST /receive/mobilemoney
+    Gateway-->>Processor: Response (0000/0001)
+    Processor->>Store: AddAsync(txnId, clientRef) (when pending)
+    Processor-->>App: Initiate result
+    Hubtel-->>Callback: POST callback payload
+    Callback->>CallbackProc: HandleCallbackAsync
+    CallbackProc->>Store: RemoveAsync(txnId) (final)
+    CallbackProc->>Audit: Save payload + result
+    CallbackProc-->>Callback: Success/Failure
+    Callback-->>Hubtel: 200 OK
+```
+
 ## Packages
 
 ```bash
@@ -303,6 +349,10 @@ Each `Error` exposes `ProviderCode`, `ProviderMessage`, and optional metadata en
 
 The repository includes extensive unit and WireMock-backed integration tests under `tests/Scynett.Hubtel.Payments.Tests`. Use them as a reference for custom stubs, DI bootstrapping, or integration pipelines.
 
+## Versioning & releases
+
+This SDK follows [Semantic Versioning](https://semver.org/) with tag-driven releases. Annotated git tags that start with `v` (for example `v1.4.0` or `v1.4.0-rc.1`) determine the NuGet package version produced by `dotnet pack`. See [CONTRIBUTING.md](CONTRIBUTING.md#releasing) for the full release checklist and tagging instructions.
+
 ## Limitations / roadmap
 
 - Only Direct Receive Money + transaction status APIs are implemented; payouts and other Hubtel surfaces are not yet supported.
@@ -314,9 +364,6 @@ The repository includes extensive unit and WireMock-backed integration tests und
 ## License
 
 MIT
-
-
-
 
 
 

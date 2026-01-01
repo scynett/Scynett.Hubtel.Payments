@@ -48,6 +48,7 @@ builder.Services.AddHubtelPaymentsWorker(worker =>
 });
 
 var app = builder.Build();
+app.UseHubtelCorrelation();
 app.Run();
 ```
 
@@ -313,7 +314,6 @@ The repository includes extensive unit and WireMock-backed integration tests und
 ## License
 
 MIT
-
 
 
 

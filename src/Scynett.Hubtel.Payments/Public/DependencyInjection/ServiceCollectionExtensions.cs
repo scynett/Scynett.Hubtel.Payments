@@ -2,6 +2,7 @@ using System;
 
 using FluentValidation;
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http.Resilience;
@@ -28,8 +29,10 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddHubtelPayments(this IServiceCollection services, Action<PendingTransactionsWorkerOptions>? configure = null)
     {
         services.TryAddSingleton<IPendingTransactionsStore, InMemoryPendingTransactionsStore>();
+        services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         services.TryAddSingleton<ICallbackAuditStore, InMemoryCallbackAuditStore>();
         services.AddTransient<HubtelAuthHandler>();
+        services.AddTransient<HubtelCorrelationHandler>();
 
         services.AddScoped<IHubtelReceiveMoneyGateway, HubtelReceiveMoneyGateway>();
         services.AddScoped<IHubtelTransactionStatusGateway, HubtelTransactionStatusGateway>();
@@ -57,6 +60,7 @@ public static class ServiceCollectionExtensions
                     nameof(HubtelOptions.ReceiveMoneyBaseAddress));
                 client.Timeout = ResolveTimeout(options.TimeoutSeconds);
             })
+            .AddHttpMessageHandler<HubtelCorrelationHandler>()
             .AddHttpMessageHandler<HubtelAuthHandler>()
             .AddHubtelResilience();
 
@@ -69,6 +73,7 @@ public static class ServiceCollectionExtensions
                     nameof(HubtelOptions.TransactionStatusBaseAddress));
                 client.Timeout = ResolveTimeout(options.TimeoutSeconds);
             })
+            .AddHttpMessageHandler<HubtelCorrelationHandler>()
             .AddHttpMessageHandler<HubtelAuthHandler>()
             .AddHubtelResilience();
 

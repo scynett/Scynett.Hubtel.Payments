@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
+using Scynett.Hubtel.Payments.Infrastructure.Diagnostics;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
 
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
@@ -61,6 +63,10 @@ public sealed class ReceiveMoneyCallbackProcessor(
 
         try
         {
+            using var activity = HubtelDiagnostics.ActivitySource.StartActivity("DirectReceiveMoney.Callback");
+            activity?.SetTag("hubtel.transactionId", callback.Data.TransactionId);
+            activity?.SetTag("hubtel.clientReference", callback.Data.ClientReference);
+
             ReceiveMoneyCallbackLogMessages.CallbackReceived(
                 logger,
                 callback.Data.ClientReference,
@@ -101,6 +107,8 @@ public sealed class ReceiveMoneyCallbackProcessor(
                     ct)
                 .ConfigureAwait(false);
 
+            activity?.SetStatus(decision.IsSuccess ? ActivityStatusCode.Ok : ActivityStatusCode.Error);
+
             return OperationResult<ReceiveMoneyCallbackResult>.Success(result);
         }
         catch (Exception ex)
@@ -112,6 +120,7 @@ public sealed class ReceiveMoneyCallbackProcessor(
                 ex,
                 callback.Data.TransactionId,
                 callback.Data.ClientReference);
+            Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.Message);
 
             return OperationResult<ReceiveMoneyCallbackResult>.Failure(
                 Error.Problem(

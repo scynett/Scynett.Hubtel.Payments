@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 
 using FluentValidation;
@@ -9,6 +10,7 @@ using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMon
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 using Scynett.Hubtel.Payments.Options;
+using Scynett.Hubtel.Payments.Infrastructure.Diagnostics;
 using Scynett.Hubtel.Payments.Infrastructure.Storage;
 
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
@@ -44,6 +46,10 @@ internal sealed class InitiateReceiveMoneyProcessor(
 
         try
         {
+            using var activity = HubtelDiagnostics.ActivitySource.StartActivity("DirectReceiveMoney.Initiate");
+            activity?.SetTag("hubtel.clientReference", request.ClientReference);
+            activity?.SetTag("hubtel.channel", request.Channel);
+
             InitiateReceiveMoneyLogMessages.Initiating(
                 logger,
                 request.ClientReference,
@@ -79,6 +85,7 @@ internal sealed class InitiateReceiveMoneyProcessor(
             // 3) Call gateway - returns GatewayInitiateReceiveMoneyResult directly
             var gatewayResponse = await gateway.InitiateAsync(gatewayRequest, ct)
                 .ConfigureAwait(false);
+            activity?.SetTag("hubtel.transactionId", gatewayResponse.TransactionId);
 
             // 4) Decision (your factory)
             var decision = HubtelResponseDecisionFactory.Create(
@@ -128,6 +135,7 @@ internal sealed class InitiateReceiveMoneyProcessor(
             // 7) Check if this is a failure scenario that should return failure
             if (!decision.IsSuccess && decision.IsFinal)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, decision.CustomerMessage ?? gatewayResponse.Message);
                 InitiateReceiveMoneyLogMessages.GatewayFailed(
                     logger,
                     request.ClientReference,
@@ -141,6 +149,7 @@ internal sealed class InitiateReceiveMoneyProcessor(
                         .WithProvider(gatewayResponse.ResponseCode, gatewayResponse.Message));
             }
 
+            activity?.SetStatus(ActivityStatusCode.Ok);
             // SDK-friendly: Success if we got a Hubtel response; consumer interprets decision via result
             return OperationResult<InitiateReceiveMoneyResult>.Success(result);
         }
@@ -152,6 +161,7 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 logger,
                 ex,
                 request.ClientReference);
+            Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.Message);
 
             return OperationResult<InitiateReceiveMoneyResult>.Failure(
                 Error.Problem(

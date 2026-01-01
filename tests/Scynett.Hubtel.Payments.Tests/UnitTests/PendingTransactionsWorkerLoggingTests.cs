@@ -88,24 +88,6 @@ public sealed class PendingTransactionsWorkerLoggingTests : UnitTestBase
             entry.Message.Contains("txn-early", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public async Task Log_ShouldLogSkippingNullTransactionId_WhenEncountered()
-    {
-        var logger = new TestLogger<PendingTransactionsWorker>();
-        var store = new Mock<IPendingTransactionsStore>();
-        store.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { new PendingTransaction("client", null, DateTimeOffset.UtcNow - TimeSpan.FromMinutes(10)) });
-
-        var direct = new Mock<IDirectReceiveMoney>(MockBehavior.Strict);
-
-        using var worker = CreateWorker(store.Object, direct.Object, logger: logger);
-
-        await worker.ProcessBatchAsync(CancellationToken.None);
-
-        logger.Entries.Should().Contain(entry =>
-            entry.Message.Contains("MissingTransactionId", StringComparison.OrdinalIgnoreCase));
-    }
-
     private static PendingTransactionsWorker CreateWorker(
         IPendingTransactionsStore store,
         IDirectReceiveMoney directReceiveMoney,

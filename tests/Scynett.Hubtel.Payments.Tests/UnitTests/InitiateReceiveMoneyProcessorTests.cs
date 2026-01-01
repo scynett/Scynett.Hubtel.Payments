@@ -103,13 +103,14 @@ public sealed class InitiateReceiveMoneyProcessorTests : UnitTestBase
             new HubtelOptions { MerchantAccountNumber = "merchant" },
             pendingStore);
 
+        var request = InitiateReceiveMoneyRequestBuilder.ValidRequest();
         var result = await processor.ExecuteAsync(
-            InitiateReceiveMoneyRequestBuilder.ValidRequest(),
+            request,
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         pendingStore.Verify(
-            x => x.AddAsync("txn-200", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
+            x => x.AddAsync("txn-200", request.ClientReference, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -157,7 +158,7 @@ public sealed class InitiateReceiveMoneyProcessorTests : UnitTestBase
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("DirectReceiveMoney.ValidationError");
         pendingStore.Verify(
-            x => x.AddAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
+            x => x.AddAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 

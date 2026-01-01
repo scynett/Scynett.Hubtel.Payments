@@ -77,7 +77,7 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
         store.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[]
             {
-                new PendingTransaction("client", null, DateTimeOffset.UtcNow - TimeSpan.FromMinutes(10))
+                new PendingTransaction("client", string.Empty, DateTimeOffset.UtcNow - TimeSpan.FromMinutes(10))
             });
 
         var direct = new Mock<IDirectReceiveMoney>(MockBehavior.Strict);
@@ -290,7 +290,7 @@ public sealed class PendingTransactionsWorkerTests : UnitTestBase
             logger ?? NullLogger<PendingTransactionsWorker>.Instance);
     }
 
-    private static PendingTransaction CreateTransaction(string? transactionId, DateTimeOffset? createdAt = null)
+    private static PendingTransaction CreateTransaction(string transactionId, DateTimeOffset? createdAt = null)
         => new("client-ref", transactionId, createdAt ?? DateTimeOffset.UtcNow - TimeSpan.FromMinutes(10));
 
     private static OperationResult<TransactionStatusResult> SuccessResult(string status) =>

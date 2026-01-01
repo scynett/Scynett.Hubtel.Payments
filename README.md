@@ -159,6 +159,8 @@ catch (HubtelPaymentsException ex)
 | `PendingTransactionsWorkerOptions.CallbackGracePeriod` | Minimum wait before contacting Hubtel after initiation. |
 | `PendingTransactionsWorkerOptions.PollInterval` | Delay between worker batches (also used by `ExecuteAsync`). |
 | `PendingTransactionsWorkerOptions.BatchSize` | Number of pending transactions processed per batch. |
+| `PendingTransactionsCleanupOptions.RetentionPeriod` | How long to keep pending transactions before automatic cleanup (default 30 days). |
+| `PendingTransactionsCleanupOptions.CleanupInterval` | How often the cleanup service runs (default every 6 hours). |
 
 All options are `IOptions<T>` friendly and can be bound from configuration or populated programmatically.
 
@@ -306,7 +308,6 @@ The repository includes extensive unit and WireMock-backed integration tests und
 ## License
 
 MIT
-
 
 
 

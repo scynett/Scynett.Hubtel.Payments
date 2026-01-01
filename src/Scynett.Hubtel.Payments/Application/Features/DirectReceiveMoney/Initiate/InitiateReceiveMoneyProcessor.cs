@@ -100,6 +100,7 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 {
                     await pendingStore.AddAsync(
                         gatewayResponse.TransactionId,
+                        request.ClientReference,
                         DateTimeOffset.UtcNow,
                         ct).ConfigureAwait(false);
 

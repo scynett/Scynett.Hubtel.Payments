@@ -92,9 +92,13 @@ public sealed class PostgreSqlPendingTransactionsStore : IPendingTransactionsSto
         _initialized = true;
     }
 
-    public async Task AddAsync(string transactionId, DateTimeOffset createdAtUtc, CancellationToken cancellationToken = default)
+    public async Task AddAsync(
+        string hubtelTransactionId,
+        string clientReference,
+        DateTimeOffset createdAtUtc,
+        CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(transactionId))
+        if (string.IsNullOrWhiteSpace(hubtelTransactionId))
             return;
 
         await EnsureInitializedAsync(cancellationToken).ConfigureAwait(false);
@@ -104,13 +108,14 @@ public sealed class PostgreSqlPendingTransactionsStore : IPendingTransactionsSto
         {
             var sql = $"""
                 INSERT INTO {_options.FullTableName} (hubtel_transaction_id, client_reference, created_at_utc, updated_at_utc)
-                VALUES (@TransactionId, @TransactionId, @CreatedAtUtc, @CreatedAtUtc)
+                VALUES (@TransactionId, @ClientReference, @CreatedAtUtc, @CreatedAtUtc)
                 ON CONFLICT (hubtel_transaction_id) DO NOTHING;
                 """;
 
             var parameters = new
             {
-                TransactionId = transactionId,
+                TransactionId = hubtelTransactionId,
+                ClientReference = clientReference,
                 CreatedAtUtc = createdAtUtc.UtcDateTime
             };
 
@@ -122,7 +127,7 @@ public sealed class PostgreSqlPendingTransactionsStore : IPendingTransactionsSto
                     cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
-        PostgreSqlStorageLogMessages.TransactionAdded(_logger, transactionId);
+        PostgreSqlStorageLogMessages.TransactionAdded(_logger, hubtelTransactionId);
     }
 
     public async Task RemoveAsync(string transactionId, CancellationToken cancellationToken = default)
@@ -179,9 +184,30 @@ public sealed class PostgreSqlPendingTransactionsStore : IPendingTransactionsSto
             return results
                 .Select(r => new PendingTransaction(
                     r.ClientReference ?? r.HubtelTransactionId ?? string.Empty,
-                    r.HubtelTransactionId,
+                    r.HubtelTransactionId ?? string.Empty,
                     new DateTimeOffset(r.CreatedAtUtc, TimeSpan.Zero)))
                 .ToList();
+        }
+    }
+
+    public async Task RemoveOlderThanAsync(DateTimeOffset cutoffUtc, CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken).ConfigureAwait(false);
+
+        var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+        await using (connection.ConfigureAwait(false))
+        {
+            var sql = $"""
+                DELETE FROM {_options.FullTableName}
+                WHERE created_at_utc < @CutoffUtc;
+                """;
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new { CutoffUtc = cutoffUtc.UtcDateTime },
+                    commandTimeout: _options.CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
     }
 

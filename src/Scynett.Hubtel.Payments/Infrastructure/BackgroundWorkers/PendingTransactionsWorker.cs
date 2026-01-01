@@ -64,7 +64,7 @@ internal sealed class PendingTransactionsWorker(
                 {
                     if (DateTimeOffset.UtcNow - transaction.CreatedAtUtc < callbackWait)
                     {
-                        PendingTransactionsWorkerLogMessages.TooEarly(logger, transaction.HubtelTransactionId ?? "unknown");
+                        PendingTransactionsWorkerLogMessages.TooEarly(logger, transaction.HubtelTransactionId);
                         continue;
                     }
 
@@ -109,7 +109,7 @@ internal sealed class PendingTransactionsWorker(
                 }
                 catch (Exception ex)
                 {
-                    PendingTransactionsWorkerLogMessages.ProcessingError(logger, ex, transaction.HubtelTransactionId ?? "unknown");
+                    PendingTransactionsWorkerLogMessages.ProcessingError(logger, ex, transaction.HubtelTransactionId);
                 }
             }
         }

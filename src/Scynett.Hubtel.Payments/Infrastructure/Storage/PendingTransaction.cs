@@ -2,5 +2,5 @@
 
 public sealed record PendingTransaction(
     string ClientReference,
-    string? HubtelTransactionId,
+    string HubtelTransactionId,
     DateTimeOffset CreatedAtUtc);

@@ -73,11 +73,13 @@ public static class ServiceCollectionExtensions
             .AddHubtelResilience();
 
         services.AddOptions<PendingTransactionsWorkerOptions>();
+        services.AddOptions<PendingTransactionsCleanupOptions>();
         services.AddOptions<HubtelResilienceOptions>();
         if (configure is not null)
             services.Configure(configure);
 
         services.AddHostedService<PendingTransactionsWorker>();
+        services.AddHostedService<PendingTransactionsCleanupService>();
 
         return services;
     }

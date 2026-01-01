@@ -11,5 +11,13 @@ public sealed record ReceiveMoneyCallbackResult(
     bool IsFinal,
     bool IsSuccess,
     string? CustomerMessage,
-    string? RawMessage
+    string? RawMessage,
+    decimal Amount = 0m,
+    decimal? Charges = null,
+    decimal? AmountAfterCharges = null,
+    decimal? AmountCharged = null,
+    string? Description = null,
+    string? ExternalTransactionId = null,
+    string? OrderId = null,
+    DateTimeOffset? PaymentDate = null
 );

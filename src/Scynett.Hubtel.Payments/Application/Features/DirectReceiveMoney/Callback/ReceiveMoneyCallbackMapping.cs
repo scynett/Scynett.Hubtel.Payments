@@ -17,7 +17,15 @@ internal static class ReceiveMoneyCallbackMapping
             IsFinal: decision.IsFinal,
             IsSuccess: decision.IsSuccess,
             CustomerMessage: decision.CustomerMessage,
-            RawMessage: callback.Message);
+            RawMessage: callback.Message,
+            Amount: callback.Data.Amount,
+            Charges: callback.Data.Charges,
+            AmountAfterCharges: callback.Data.AmountAfterCharges,
+            AmountCharged: callback.Data.AmountCharged,
+            Description: callback.Data.Description,
+            ExternalTransactionId: callback.Data.ExternalTransactionId,
+            OrderId: callback.Data.OrderId,
+            PaymentDate: callback.Data.PaymentDate);
     }
 
     internal static string BuildDecisionMessage(ReceiveMoneyCallbackRequest callback)

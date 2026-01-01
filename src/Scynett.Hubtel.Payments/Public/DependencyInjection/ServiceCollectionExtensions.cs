@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddHubtelPayments(this IServiceCollection services, Action<PendingTransactionsWorkerOptions>? configure = null)
     {
         services.TryAddSingleton<IPendingTransactionsStore, InMemoryPendingTransactionsStore>();
+        services.TryAddSingleton<ICallbackAuditStore, InMemoryCallbackAuditStore>();
         services.AddTransient<HubtelAuthHandler>();
 
         services.AddScoped<IHubtelReceiveMoneyGateway, HubtelReceiveMoneyGateway>();

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
 using Scynett.Hubtel.Payments.DirectReceiveMoney;
@@ -14,10 +15,25 @@ internal static class HubtelReceiveMoneyCallbackEndpoint
         endpoints.MapPost(
             RouteConstants.ReceiveMoneyCallback,
             async (
+                HttpContext context,
                 ReceiveMoneyCallbackRequest payload,
                 IDirectReceiveMoney directReceiveMoney,
                 CancellationToken ct) =>
             {
+                var callbackValidator = context.RequestServices.GetService<ICallbackValidator>();
+                var validationResult = callbackValidator is null
+                    ? CallbackValidationResult.Success
+                    : await callbackValidator.ValidateAsync(context, ct).ConfigureAwait(false);
+
+                if (!validationResult.IsValid)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = validationResult.ErrorCode ?? "Hubtel.Callback.Validation",
+                        message = validationResult.ErrorMessage ?? "Callback validation failed."
+                    });
+                }
+
                 var result =
                     await directReceiveMoney
                         .HandleCallbackAsync(payload, ct)

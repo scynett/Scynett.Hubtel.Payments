@@ -1,4 +1,8 @@
-﻿using FluentValidation;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+
+using FluentValidation;
 
 using Microsoft.Extensions.Logging;
 
@@ -10,9 +14,12 @@ namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callba
 
 public sealed class ReceiveMoneyCallbackProcessor(
     IPendingTransactionsStore pendingStore,
+    ICallbackAuditStore auditStore,
     IValidator<ReceiveMoneyCallbackRequest> validator,
     ILogger<ReceiveMoneyCallbackProcessor> logger)
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+
     public async Task<OperationResult<ReceiveMoneyCallbackResult>> ExecuteAsync(
         ReceiveMoneyCallbackRequest callback,
         CancellationToken ct = default)
@@ -27,6 +34,29 @@ public sealed class ReceiveMoneyCallbackProcessor(
 
             return OperationResult<ReceiveMoneyCallbackResult>.Failure(
                 Error.Validation("Hubtel.Callback.Validation", validation.ToString()));
+        }
+
+        var rawPayload = JsonSerializer.Serialize(callback, SerializerOptions);
+        var payloadHash = ComputePayloadHash(rawPayload);
+        var startResult = await auditStore.TryStartAsync(
+                callback.Data.TransactionId,
+                payloadHash,
+                rawPayload,
+                DateTimeOffset.UtcNow,
+                ct)
+            .ConfigureAwait(false);
+
+        if (!startResult.CanProcess)
+        {
+            if (startResult.ExistingResult is not null)
+            {
+                return OperationResult<ReceiveMoneyCallbackResult>.Success(startResult.ExistingResult);
+            }
+
+            return OperationResult<ReceiveMoneyCallbackResult>.Failure(
+                Error.Conflict(
+                    "Hubtel.Callback.InFlight",
+                    "Callback is already being processed."));
         }
 
         try
@@ -50,10 +80,8 @@ public sealed class ReceiveMoneyCallbackProcessor(
                 decision.IsFinal,
                 decision.NextAction.ToString());
 
-            // For callbacks, response is final for 0000 and 2001; but we still follow decision.IsFinal.
             if (decision.IsFinal)
             {
-                // Remove pending by TransactionId (Hubtel callback always contains TransactionId).
                 await pendingStore.RemoveAsync(callback.Data.TransactionId, ct).ConfigureAwait(false);
 
                 ReceiveMoneyCallbackLogMessages.PendingRemoved(
@@ -64,14 +92,21 @@ public sealed class ReceiveMoneyCallbackProcessor(
 
             var result = ReceiveMoneyCallbackMapping.ToResult(callback, decision);
 
-            // Decide whether to treat non-success callbacks as failures:
-            // - If you want the endpoint to return 200 always (recommended), still return Success here,
-            //   but include IsSuccess=false in the result. However, OperationResult should reflect
-            //   whether *processing* succeeded, not payment success.
+            await auditStore.SaveResultAsync(
+                    callback.Data.TransactionId,
+                    result,
+                    decision.IsSuccess,
+                    callback.ResponseCode,
+                    DateTimeOffset.UtcNow,
+                    ct)
+                .ConfigureAwait(false);
+
             return OperationResult<ReceiveMoneyCallbackResult>.Success(result);
         }
         catch (Exception ex)
         {
+            await auditStore.MarkFailureAsync(callback.Data.TransactionId, ct).ConfigureAwait(false);
+
             ReceiveMoneyCallbackLogMessages.ProcessingFailed(
                 logger,
                 ex,
@@ -84,5 +119,12 @@ public sealed class ReceiveMoneyCallbackProcessor(
                         "An error occurred while processing the Hubtel callback.")
                     .WithMetadata("exception", ex.GetType().Name));
         }
+    }
+
+    private static string ComputePayloadHash(string rawPayload)
+    {
+        var bytes = Encoding.UTF8.GetBytes(rawPayload);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash);
     }
 }

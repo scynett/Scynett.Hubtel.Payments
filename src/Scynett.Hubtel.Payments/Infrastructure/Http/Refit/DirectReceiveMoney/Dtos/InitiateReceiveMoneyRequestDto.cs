@@ -1,10 +1,13 @@
-﻿namespace Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney.Dtos;
+using System.Text.Json.Serialization;
 
-internal record InitiateReceiveMoneyRequestDto(string CustomerName,
+namespace Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney.Dtos;
+
+internal record InitiateReceiveMoneyRequestDto(
+    string CustomerName,
     string CustomerMsisdn,
     string CustomerEmail,
     string Channel,
     string Amount,
-    string PrimaryCallbackEndpoint,
+    [property: JsonPropertyName("PrimaryCallbackUrl")] string PrimaryCallbackUrl,
     string Description,
     string ClientReference);

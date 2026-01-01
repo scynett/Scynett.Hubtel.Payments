@@ -85,28 +85,111 @@ public sealed class InitiateReceiveMoneyProcessorTests : UnitTestBase
             Times.Never);
     }
 
+    [Fact]
+    public async Task ProcessAsync_ShouldStorePending_WhenDecisionWaitsForCallback()
+    {
+        var gateway = new Mock<IHubtelReceiveMoneyGateway>();
+        var pendingStore = new Mock<IPendingTransactionsStore>();
+        gateway.Setup(x => x.InitiateAsync(It.IsAny<GatewayInitiateReceiveMoneyRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GatewayInitiateReceiveMoneyResult(
+                ResponseCode: "0001",
+                Message: "Pending",
+                TransactionId: "txn-200",
+                ExternalReference: "client-200"));
+
+        var processor = CreateProcessor(
+            gateway,
+            new DirectReceiveMoneyOptions { PosSalesId = "POS-200" },
+            new HubtelOptions { MerchantAccountNumber = "merchant" },
+            pendingStore);
+
+        var result = await processor.ExecuteAsync(
+            InitiateReceiveMoneyRequestBuilder.ValidRequest(),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        pendingStore.Verify(
+            x => x.AddAsync("txn-200", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldReturnFailure_OnGatewayApiException()
+    {
+        var gateway = new Mock<IHubtelReceiveMoneyGateway>();
+        gateway.Setup(x => x.InitiateAsync(It.IsAny<GatewayInitiateReceiveMoneyRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("boom"));
+
+        var processor = CreateProcessor(
+            gateway,
+            new DirectReceiveMoneyOptions { PosSalesId = "POS-300" },
+            new HubtelOptions { MerchantAccountNumber = "merchant" });
+
+        var result = await processor.ExecuteAsync(
+            InitiateReceiveMoneyRequestBuilder.ValidRequest(),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("DirectReceiveMoney.UnhandledException");
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldSurfaceGatewayFailure_WhenDecisionIsFinalFailure()
+    {
+        var gateway = new Mock<IHubtelReceiveMoneyGateway>();
+        var pendingStore = new Mock<IPendingTransactionsStore>();
+        gateway.Setup(x => x.InitiateAsync(It.IsAny<GatewayInitiateReceiveMoneyRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GatewayInitiateReceiveMoneyResult(
+                ResponseCode: "4000",
+                Message: "Validation error",
+                TransactionId: null));
+
+        var processor = CreateProcessor(
+            gateway,
+            new DirectReceiveMoneyOptions { PosSalesId = "POS-400" },
+            new HubtelOptions { MerchantAccountNumber = "merchant" },
+            pendingStore);
+
+        var result = await processor.ExecuteAsync(
+            InitiateReceiveMoneyRequestBuilder.ValidRequest(),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("DirectReceiveMoney.ValidationError");
+        pendingStore.Verify(
+            x => x.AddAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     private static InitiateReceiveMoneyProcessor CreateProcessor(
         Mock<IHubtelReceiveMoneyGateway> gateway,
         DirectReceiveMoneyOptions directOptions,
-        HubtelOptions hubtelOptions)
+        HubtelOptions hubtelOptions,
+        Mock<IPendingTransactionsStore>? pendingStore = null,
+        IValidator<InitiateReceiveMoneyRequest>? validator = null,
+        ILogger<InitiateReceiveMoneyProcessor>? logger = null)
     {
-        var pendingStore = new Mock<IPendingTransactionsStore>();
+        pendingStore ??= new Mock<IPendingTransactionsStore>();
 
-        var validator = new Mock<IValidator<InitiateReceiveMoneyRequest>>();
-        validator.Setup(v => v.ValidateAsync(
-                It.IsAny<InitiateReceiveMoneyRequest>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+        if (validator is null)
+        {
+            var validatorMock = new Mock<IValidator<InitiateReceiveMoneyRequest>>();
+            validatorMock.Setup(v => v.ValidateAsync(
+                    It.IsAny<InitiateReceiveMoneyRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ValidationResult());
+            validator = validatorMock.Object;
+        }
 
-        var logger = new Mock<ILogger<InitiateReceiveMoneyProcessor>>();
+        logger ??= new Mock<ILogger<InitiateReceiveMoneyProcessor>>().Object;
 
         return new InitiateReceiveMoneyProcessor(
             gateway.Object,
             pendingStore.Object,
             Microsoft.Extensions.Options.Options.Create(hubtelOptions),
             Microsoft.Extensions.Options.Options.Create(directOptions),
-            validator.Object,
-            logger.Object);
+            validator,
+            logger);
     }
 
     private static GatewayInitiateReceiveMoneyResult CreateGatewayResult() =>

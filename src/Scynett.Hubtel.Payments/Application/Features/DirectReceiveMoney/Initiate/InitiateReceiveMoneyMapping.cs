@@ -32,7 +32,7 @@ internal static class InitiateReceiveMoneyMapping
         var status = decision.Category.ToString(); // e.g. Success / Pending / CustomerError / ValidationError
 
         return new InitiateReceiveMoneyResult(
-            ClientReference: request.ClientReference,
+            ClientReference: gateway.ExternalReference ?? request.ClientReference,
             HubtelTransactionId: gateway.TransactionId ?? string.Empty,
             ExternalTransactionId: gateway.ExternalTransactionId,
             OrderId: gateway.OrderId,

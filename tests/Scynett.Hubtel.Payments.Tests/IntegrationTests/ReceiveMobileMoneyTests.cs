@@ -1,3 +1,5 @@
+using System;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -48,5 +50,24 @@ public sealed class ReceiveMobileMoneyTests
         statusResult.Value!.Status.Should().Be("Paid");
         statusResult.Value.TransactionId.Should().Be(TransactionStatusStub.DefaultTransactionId);
     }
-}
 
+    [Fact]
+    public async Task Initiate_ShouldSendPrimaryCallbackUrl()
+    {
+        using var scope = _fixture.Services.CreateScope();
+        var direct = scope.ServiceProvider.GetRequiredService<IDirectReceiveMoney>();
+        var callback = _fixture.DefaultCallbackUrl.ToString();
+        var request = InitiateReceiveMoneyRequestBuilder.ValidRequest() with
+        {
+            PrimaryCallbackEndPoint = callback
+        };
+
+        await direct.InitiateAsync(request, CancellationToken.None);
+
+        var entry = _fixture.HubtelMock.LogEntries
+            .Last(e => e.RequestMessage.Path.Contains("/receive/mobilemoney", StringComparison.OrdinalIgnoreCase));
+
+        entry.RequestMessage.Body.Should().Contain($"\"PrimaryCallbackUrl\":\"{callback}\"")
+            .And.NotContain("PrimaryCallbackEndpoint");
+    }
+}

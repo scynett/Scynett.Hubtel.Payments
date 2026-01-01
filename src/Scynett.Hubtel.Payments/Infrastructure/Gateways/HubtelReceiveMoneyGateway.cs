@@ -29,7 +29,7 @@ internal sealed class HubtelReceiveMoneyGateway(
                 Channel: request.Channel,
                 CustomerEmail: request.CustomerEmail,
                 Amount: request.Amount,
-                PrimaryCallbackEndpoint: request.CallbackUrl,
+                PrimaryCallbackUrl: request.CallbackUrl,
                 Description: request.Description,
                 ClientReference: request.ClientReference);
 

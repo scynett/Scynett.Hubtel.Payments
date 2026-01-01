@@ -17,7 +17,7 @@ public sealed class InitiateReceiveMoneyMappingTests : UnitTestBase
             ResponseCode: "0000",
             Message: "Successful",
             TransactionId: "txn-001",
-            ExternalReference: request.ClientReference,
+            ExternalReference: "hubtel-ref-001",
             ExternalTransactionId: "ext-123",
             OrderId: "order-456",
             Description: "Payment approved",
@@ -30,7 +30,7 @@ public sealed class InitiateReceiveMoneyMappingTests : UnitTestBase
 
         var result = InitiateReceiveMoneyMapping.ToResult(request, gateway, decision);
 
-        result.ClientReference.Should().Be(request.ClientReference);
+        result.ClientReference.Should().Be("hubtel-ref-001");
         result.HubtelTransactionId.Should().Be("txn-001");
         result.ExternalTransactionId.Should().Be("ext-123");
         result.OrderId.Should().Be("order-456");
@@ -124,6 +124,21 @@ public sealed class InitiateReceiveMoneyMappingTests : UnitTestBase
         result.AmountAfterCharges.Should().Be(request.Amount);
         result.AmountCharged.Should().Be(request.Amount);
         result.DeliveryFee.Should().BeNull();
+    }
+
+    [Fact]
+    public void Map_ShouldFallbackClientReference_WhenGatewayDoesNotProvideOne()
+    {
+        var request = InitiateReceiveMoneyRequestBuilder.ValidRequest();
+        var gateway = new GatewayInitiateReceiveMoneyResult(
+            ResponseCode: "0000",
+            Message: "Successful",
+            TransactionId: "txn-005");
+        var decision = CreateDecision(ResponseCategory.Success);
+
+        var result = InitiateReceiveMoneyMapping.ToResult(request, gateway, decision);
+
+        result.ClientReference.Should().Be(request.ClientReference);
     }
 
     private static HandlingDecision CreateDecision(ResponseCategory category) =>

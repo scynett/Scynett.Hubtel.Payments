@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Scynett.Hubtel.Payments\Scynett.Hubtel.Payments.csproj" />
+	 
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +22,10 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>Scynett.Payments.Hubtel.AspNetCore</PackageId>
+    <Authors>Scynett</Authors>
+    <Company>Scynett</Company>
+    <PackageDescription>Hubtel Mobile Money payments integration for .NET</PackageDescription>
   </PropertyGroup>
 
 </Project>

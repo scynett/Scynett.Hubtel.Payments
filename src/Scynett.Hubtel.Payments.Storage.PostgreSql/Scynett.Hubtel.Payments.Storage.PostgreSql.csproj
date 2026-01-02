@@ -4,7 +4,10 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Description>PostgreSQL persistent storage for Scynett.Hubtel.Payments pending transactions</Description>
+    <PackageId>Scynett.Payments.Hubtel.Storage.PostgreSql</PackageId>
+    <Authors>Scynett</Authors>
+    <Company>Scynett</Company>
+    <PackageDescription>Hubtel Mobile Money payments integration for .NET</PackageDescription>
   </PropertyGroup>
 
   <ItemGroup>

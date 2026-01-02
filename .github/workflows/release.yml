@@ -47,6 +47,7 @@ jobs:
             else
               echo "##[error]No tag provided and current ref is not a tag."
               exit 1
+            fi
           fi
 
           if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z\.-]+)?$ ]]; then

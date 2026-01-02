@@ -4,8 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>Scynett.Payments.Hubtel</PackageId>
-    <Authors>Scynett</Authors>
+    <PackageId>ScynettPayments</PackageId>
+    <Authors>Samuel Nettey</Authors>
     <Company>Scynett</Company>
     <PackageDescription>Hubtel Mobile Money payments integration for .NET</PackageDescription>
   </PropertyGroup>

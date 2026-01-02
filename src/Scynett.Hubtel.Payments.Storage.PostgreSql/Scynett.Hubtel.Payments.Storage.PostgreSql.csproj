@@ -4,9 +4,9 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>Scynett.Payments.Hubtel.Storage.PostgreSql</PackageId>
-    <Authors>Scynett</Authors>
-    <Company>Scynett</Company>
+    <PackageId>ScynettPayments.Storage.PostgreSql</PackageId>
+	 <Authors>Samuel Nettey</Authors>
+	 <Company>Scynett</Company>
     <PackageDescription>Hubtel Mobile Money payments integration for .NET</PackageDescription>
   </PropertyGroup>
 

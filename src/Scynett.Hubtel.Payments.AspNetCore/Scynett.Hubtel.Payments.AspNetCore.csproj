@@ -19,10 +19,10 @@
   </ItemGroup>
 
   <PropertyGroup>
+	<PackageId>Scynett.Payments.Hubtel.AspNetCore</PackageId>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>Scynett.Payments.Hubtel.AspNetCore</PackageId>
     <Authors>Scynett</Authors>
     <Company>Scynett</Company>
     <PackageDescription>Hubtel Mobile Money payments integration for .NET</PackageDescription>

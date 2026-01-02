@@ -1,5 +1,7 @@
 # Scynett.Hubtel.Payments
-A production-grade .NET SDK for Hubtel Direct Receive Money, callbacks, and transaction status checks with opinionated validation, idempotent processing, and DI-friendly registrations.
+Scynett.Hubtel.Payments is a production-grade .NET SDK for Hubtel Direct Receive Money, designed with idempotent callbacks, opinionated validation, and DI-first integration.
+
+Built for real-world payment systems in Ghana.
 
 ## Build status & packages
 [![CI](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/ci.yml/badge.svg)](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/ci.yml)

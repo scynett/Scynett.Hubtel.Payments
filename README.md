@@ -4,7 +4,7 @@ A production-grade .NET SDK for Hubtel Direct Receive Money, callbacks, and tran
 ## Build status & packages
 [![CI](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/ci.yml/badge.svg)](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/ci.yml)
 [![Release](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/release.yml/badge.svg)](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/release.yml)
-[![NuGet](https://img.shields.io/nuget/v/Scynett.Hubtel.Payments.svg)](https://www.nuget.org/packages/Scynett.Hubtel.Payments)
+[![NuGet](https://img.shields.io/nuget/v/ScynettPayments.svg)](https://www.nuget.org/packages/ScynettPayments)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---

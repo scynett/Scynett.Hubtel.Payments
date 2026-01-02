@@ -1,9 +1,17 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g., v1.2.3 or v1.2.3-rc.1)."
+        required: false
+        type: string
+      dry_run:
+        description: "Pack but skip publishing when true."
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       tag:
@@ -33,11 +41,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve tag/version
+      - name: Resolve release metadata
         id: version
         run: |
-          INPUT_TAG="${{ github.event.inputs.tag }}"
+          INPUT_TAG="${{ inputs.tag }}"
           REF_TAG="${{ github.ref }}"
+          INPUT_DRY_RUN="${{ inputs.dry_run }}"
 
           if [ -n "${INPUT_TAG}" ]; then
             TAG="${INPUT_TAG}"
@@ -57,8 +66,15 @@ jobs:
 
           VERSION="${TAG#v}"
 
+          if [ "${INPUT_DRY_RUN}" = "true" ]; then
+            DRY_RUN="true"
+          else
+            DRY_RUN="false"
+          fi
+
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "dry_run=${DRY_RUN}" >> $GITHUB_OUTPUT
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -83,7 +99,7 @@ jobs:
           path: ${{ env.ARTIFACTS_DIR }}/*.nupkg
 
       - name: Publish to NuGet.org
-        if: ${{ github.event.inputs.dry_run != 'true' }}
+        if: ${{ steps.version.outputs.dry_run != 'true' }}
         run: |
           dotnet nuget push "${{ env.ARTIFACTS_DIR }}/*.nupkg" \
             --api-key ${{ secrets.NUGET_API_KEY }} \

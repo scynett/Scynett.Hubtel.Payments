@@ -81,7 +81,7 @@ public sealed class PaymentsController : ControllerBase
 - .NET 9.0 or later (SDK/Runtime). Tests also target .NET 10 for forward-compatibility.
 - Hubtel API credentials (Client ID, Client Secret).
 - A public HTTPS callback endpoint for Receive Money callbacks.
-- If persistence is required, configure a durable `IPendingTransactionsStore` (PostgreSQL package provided).
+- If persistence is required, configure a durable `IPendingTransactionsStore` (PostgreSQL package provided.).
 
 ---
 

@@ -1,0 +1,77 @@
+name: Preview Next Version
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  preview:
+    name: Preview
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      BASELINE_VERSION: 0.1.10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: preview
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -eo pipefail
+          TITLE="${PR_TITLE}"
+          TITLE_LOWER="${TITLE,,}"
+
+          if [[ "$TITLE" == *"BREAKING CHANGE"* ]] || [[ "$TITLE" == *"!"* ]]; then
+            BUMP="major"
+          elif [[ "$TITLE_LOWER" == feat* ]]; then
+            BUMP="minor"
+          else
+            BUMP="patch"
+          fi
+
+          LAST_TAG="$(git tag --list 'v*' --sort=-version:refname | head -n 1)"
+          if [[ -z "$LAST_TAG" ]]; then
+            CURRENT_VERSION="$BASELINE_VERSION"
+            SOURCE="baseline ($BASELINE_VERSION)"
+          else
+            CURRENT_VERSION="${LAST_TAG#v}"
+            CURRENT_VERSION="${CURRENT_VERSION%%-*}"
+            SOURCE="$LAST_TAG"
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          case "$BUMP" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            *)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEXT_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "next_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Next Release Preview"
+            echo ""
+            echo "- Source version: $SOURCE"
+            echo "- Detected bump: **$BUMP**"
+            echo "- Next version: **v$NEXT_VERSION**"
+            echo ""
+            echo "> PR Title: $TITLE"
+          } >> "$GITHUB_STEP_SUMMARY"

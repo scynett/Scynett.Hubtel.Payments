@@ -40,10 +40,7 @@
 
   <!-- Centralised versioning (SemVer, tag-driven) -->
   <PropertyGroup>
-    <PackageVersion Condition="'$(PackageVersion)' == '' and '$(PACKAGE_VERSION)' != ''">$(PACKAGE_VERSION)</PackageVersion>
-    <PackageVersion Condition="'$(PackageVersion)' == ''">0.1.0-local</PackageVersion>
-    <Version Condition="'$(Version)' == ''">$(PackageVersion)</Version>
-    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(PackageVersion)</InformationalVersion>
+    <Version>0.1.10</Version>
   </PropertyGroup>
 
   <!-- Apply to all projects -->

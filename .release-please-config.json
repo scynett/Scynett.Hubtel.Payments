@@ -1,0 +1,6 @@
+{
+  "release-type": "dotnet",
+  "packages": {
+    ".": {}
+  }
+}

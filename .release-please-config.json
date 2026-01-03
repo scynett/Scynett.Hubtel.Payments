@@ -1,6 +1,14 @@
 {
-  "release-type": "dotnet",
+  "release-type": "simple",
   "packages": {
-    ".": {}
+    ".": {
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Directory.Build.props",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
+    }
   }
 }

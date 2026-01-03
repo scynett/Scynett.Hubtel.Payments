@@ -30,7 +30,9 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "Checking PR title: $PR_TITLE"
-          echo "$PR_TITLE" | npx --yes --package @commitlint/cli --package @commitlint/config-conventional commitlint --config commitlint.config.cjs --verbose
+          npm install --no-save --package-lock=false @commitlint/cli @commitlint/config-conventional
+          echo "$PR_TITLE" | npx commitlint --config commitlint.config.cjs --verbose
+          rm -rf node_modules package-lock.json
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4

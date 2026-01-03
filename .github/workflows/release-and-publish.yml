@@ -1,0 +1,75 @@
+name: Release & Publish
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release Please
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Release
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish:
+    name: Publish NuGet Packages
+    runs-on: ubuntu-latest
+    needs: release
+    if: ${{ needs.release.outputs.release_created == 'true' }}
+    permissions:
+      contents: read
+    env:
+      SOLUTION_PATH: Scynett.Hubtel.Payments.sln
+      ARTIFACTS_DIR: artifacts/nuget
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'Directory.Packages.props', '**/nuget.config', 'global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_PATH }} -c Release --no-restore
+
+      - name: Pack NuGet packages
+        run: |
+          mkdir -p ${{ env.ARTIFACTS_DIR }}
+          dotnet pack src/Scynett.Hubtel.Payments/Scynett.Hubtel.Payments.csproj -c Release --no-build -o ${{ env.ARTIFACTS_DIR }}
+          dotnet pack src/Scynett.Hubtel.Payments.AspNetCore/Scynett.Hubtel.Payments.AspNetCore.csproj -c Release --no-build -o ${{ env.ARTIFACTS_DIR }}
+          dotnet pack src/Scynett.Hubtel.Payments.Storage.PostgreSql/Scynett.Hubtel.Payments.Storage.PostgreSql.csproj -c Release --no-build -o ${{ env.ARTIFACTS_DIR }}
+
+      - name: Publish packages to NuGet.org
+        run: dotnet nuget push ${{ env.ARTIFACTS_DIR }}/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

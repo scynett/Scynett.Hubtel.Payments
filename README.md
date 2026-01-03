@@ -5,7 +5,7 @@ Built for real-world payment systems in Ghana.
 
 ## Build status & packages
 [![CI](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/ci.yml/badge.svg)](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/ci.yml)
-[![Release](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/release.yml/badge.svg)](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/release.yml)
+[![Release & Publish](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/release-and-publish.yml/badge.svg)](https://github.com/scynett/Scynett.Hubtel.Payments/actions/workflows/release-and-publish.yml)
 [![NuGet](https://img.shields.io/nuget/v/ScynettPayments.svg)](https://www.nuget.org/packages/ScynettPayments)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -159,15 +159,11 @@ Inspect `Error.ProviderCode`/`ProviderMessage` to surface native Hubtel error co
 ---
 
 ## Versioning & releases
-- Uses [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
-- Releases are driven by git tags that start with `v` (e.g., `v1.2.3`, `v1.2.3-rc.1`).
-- Annotated tag example:
-  ```bash
-  git tag -a v1.4.0 -m "Release v1.4.0"
-  git push origin v1.4.0
-  ```
-- CI publishes packages to NuGet when the release workflow runs on a tag.
-- See [CONTRIBUTING.md](CONTRIBUTING.md#releasing) for full release and verification steps.
+- Uses a single [Semantic Versioning](https://semver.org/) line (MAJOR.MINOR.PATCH) shared by all NuGet packages. The current baseline is **0.1.10** and is centrally managed via `Directory.Build.props`.
+- [release-please](https://github.com/googleapis/release-please) watches `main`, uses Conventional Commit PR titles to compute the next SemVer, and opens a release PR with the changelog.
+- Merging the release PR triggers [`release-and-publish.yml`](.github/workflows/release-and-publish.yml), which tags the repo (`vX.Y.Z`), creates the GitHub Release, and publishes every package (`ScynettPayments`, `ScynettPayments.AspNetCore`, `ScynettPayments.Storage.PostgreSql`) to NuGet.org automatically.
+- Every PR also runs [`preview-next-version.yml`](.github/workflows/preview-next-version.yml) to show what version would be released if merged, so you can confirm the bump before landing changes.
+- No manual tagging or pushing is required, but PR titles **must** follow Conventional Commits (see [CONTRIBUTING.md](CONTRIBUTING.md)) because squash merges make the title the final commit message.
 
 ---
 

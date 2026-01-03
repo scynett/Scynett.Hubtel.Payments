@@ -6,63 +6,45 @@ Thanks for helping improve **Scynett.Hubtel.Payments**! This project welcomes is
 
 1. Fork the repository and create a feature branch from `main`.
 2. Keep changes focused; one feature or fix per pull request.
-3. Ensure code builds and tests pass:
+3. Ensure code builds and tests pass locally:
    ```bash
-   dotnet build -c Release
-   dotnet test tests/Scynett.Hubtel.Payments.Tests/Scynett.Hubtel.Payments.Tests.csproj -c Release
+   dotnet build Scynett.Hubtel.Payments.sln -c Release
+   dotnet test Scynett.Hubtel.Payments.sln -c Release --logger "trx;LogFileName=test-results.trx"
    ```
 4. Adhere to the existing coding style (nullable enabled, analyzers ON, Activity instrumentation where appropriate).
 5. Update documentation and samples when behavior changes.
 
-## Releasing
+## Commit & PR guidelines
 
-The SDK follows **Semantic Versioning (SemVer)** with **tag-driven releases**. CI/CD jobs (coming soon) will pack and push NuGet packages whenever a valid tag is pushed. Until then, these manual steps keep releases consistent:
+- **PR titles MUST follow [Conventional Commits](https://www.conventionalcommits.org/) because the repository uses squash merges.** The PR title becomes the commit message that release-please and the automation rely on for changelog generation and version bumps.
+- Use this cheat-sheet to pick the correct prefix:
 
-### 1. Decide the version bump
+  | Change type | Prefix | Example |
+  |-------------|--------|---------|
+  | Patch       | `fix:` | `fix(hubtel): correct callback url mapping` |
+  | Minor       | `feat:` | `feat(storage): add postgres pending transaction store` |
+  | Major       | `feat!:` or add `BREAKING CHANGE` in the body | `feat!: change public payment gateway API` |
 
-- **PATCH (`vX.Y.Z` → `vX.Y.(Z+1)`):** backwards-compatible bug fixes or doc-only updates.
-- **MINOR (`vX.Y.Z` → `vX.(Y+1).0`):** backwards-compatible features, new APIs, or configuration additions.
-- **MAJOR (`vX.Y.Z` → `v(X+1).0.0`):** breaking API changes or behavioral changes that require consumers to act.
+- Include a scope when it adds clarity, e.g., `feat(aspnetcore): add middleware`.
+- Tests must pass (`dotnet test`) and CI must be green before requesting review.
 
-### 2. Create an annotated tag
+## Automated releases
 
-> **Tag format:** must start with `v` and follow SemVer, e.g. `v1.4.0` or `v1.4.0-rc.1`.
-
-- Stable release:
-  ```bash
-  git tag -a vX.Y.Z -m "Release vX.Y.Z"
-  ```
-- Pre-release (e.g., release candidate):
-  ```bash
-  git tag -a vX.Y.Z-rc.1 -m "Release vX.Y.Z-rc.1"
-  ```
-
-### 3. Push the tag to origin
-
-```bash
-git push origin vX.Y.Z
-```
-
-*(Adjust the tag name for pre-releases as needed.)*
-
-### 4. Draft GitHub release notes
-
-1. Go to **GitHub → Releases → Draft a new release**.
-2. Select the newly pushed tag.
-3. Summarize notable changes (features, fixes, breaking changes, docs).
-4. Publish the release. CI/CD will detect the tag and publish packages automatically (once the workflow is in place).
+- Versioning is centralized in `Directory.Build.props` and tracked by release-please. The baseline version is **0.1.10** and all NuGet packages share the same SemVer.
+- release-please opens or updates release PRs. Merging the release PR into `main` automatically:
+  1. Cuts the tag `vX.Y.Z`.
+  2. Creates the GitHub Release.
+  3. Builds, packs, and publishes the NuGet packages (`ScynettPayments`, `ScynettPayments.AspNetCore`, `ScynettPayments.Storage.PostgreSql`) with the shared version.
+- No manual tagging or publishing is needed. Land changes via PRs with correct titles and let the automation handle the rest.
 
 ## Verification checklist
 
-Before tagging a release, run the following commands and confirm they succeed:
+Run the following commands locally (Release configuration) before submitting or merging a PR:
 
 ```bash
-dotnet build -c Release
-dotnet test tests/Scynett.Hubtel.Payments.Tests/Scynett.Hubtel.Payments.Tests.csproj -c Release
-dotnet pack -c Release
-dotnet pack -c Release -p:PackageVersion=1.2.3
+dotnet restore Scynett.Hubtel.Payments.sln
+dotnet build Scynett.Hubtel.Payments.sln -c Release --no-restore
+dotnet test Scynett.Hubtel.Payments.sln -c Release --no-build
 ```
 
-After `dotnet pack`, ensure the generated `.nupkg` files use the expected version (either the default `0.1.0-local` or the explicit value passed via `PackageVersion`).
-
-Happy shipping! 🚀
+Happy shipping!

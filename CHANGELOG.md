@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11](https://github.com/scynett/Scynett.Hubtel.Payments/compare/Scynett.Hubtel.Payments-v0.1.10...Scynett.Hubtel.Payments-v0.1.11) (2026-02-09)
+
+
+### Bug Fixes
+
+* correct bash syntax in release workflow ([5b4fb90](https://github.com/scynett/Scynett.Hubtel.Payments/commit/5b4fb9036410a7bd7dddbee4d57b79bb656a9862))
+* correct bash syntax in release workflow ([c0a5a13](https://github.com/scynett/Scynett.Hubtel.Payments/commit/c0a5a13b06f2a782caff57405f824dcd2e30ee20))
+
 ## [Unreleased]
 
 ### Added

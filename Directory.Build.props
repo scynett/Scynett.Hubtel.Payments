@@ -8,7 +8,7 @@
 
     <!-- Build quality -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
+    <WarningsAsErrors/>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
 
@@ -40,16 +40,16 @@
 
   <!-- Centralised versioning (SemVer, tag-driven) -->
   <PropertyGroup>
-    <Version>0.1.10</Version>
+    <Version>0.1.11</Version>
   </PropertyGroup>
 
   <!-- Apply to all projects -->
   <ItemGroup>
-    <Using Include="System.Diagnostics.CodeAnalysis" />
+    <Using Include="System.Diagnostics.CodeAnalysis"/>
   </ItemGroup>
 
   <!-- Include README in package -->
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Condition="Exists('$(MSBuildThisFileDirectory)README.md')" />
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Condition="Exists('$(MSBuildThisFileDirectory)README.md')"/>
   </ItemGroup>
 </Project>

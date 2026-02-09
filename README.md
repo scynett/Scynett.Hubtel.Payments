@@ -144,6 +144,7 @@ else
 }
 ```
 Common error codes:
+
 | Code | Meaning |
 |------|---------|
 | `DirectReceiveMoney.ValidationFailed` | FluentValidation rejected the request. |

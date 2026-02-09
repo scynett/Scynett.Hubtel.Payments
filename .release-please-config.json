@@ -1,6 +1,15 @@
 {
-  "release-type": "dotnet",
+  "release-type": "simple",
   "packages": {
-    ".": {}
+    ".": {
+      "package-name": "Scynett.Hubtel.Payments",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Directory.Build.props",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
+    }
   }
 }

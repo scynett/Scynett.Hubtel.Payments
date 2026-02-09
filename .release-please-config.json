@@ -1,7 +1,8 @@
 {
-  "release-type": "simple",
   "packages": {
     ".": {
+      "release-type": "dotnet",
+      "package-name": "Scynett.Hubtel.Payments",
       "extra-files": [
         {
           "type": "xml",

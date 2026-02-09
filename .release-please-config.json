@@ -1,5 +1,5 @@
 {
-  "release-type": "dotnet",
+  "release-type": "node",
   "packages": {
     ".": {
       "package-name": "Scynett.Hubtel.Payments",

@@ -98,6 +98,7 @@ public static class ServiceCollectionExtensions
             services.Configure(configure);
         }
 
+        services.AddScoped<PendingTransactionsWorker>();
         services.AddHostedService<PendingTransactionsWorker>();
         return services;
     }

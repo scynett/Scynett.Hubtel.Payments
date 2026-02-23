@@ -1,30 +1,43 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
-using Scynett.Hubtel.Payments.Options;
-using Scynett.Hubtel.Payments.Infrastructure.Storage;
 using Scynett.Hubtel.Payments.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.Infrastructure.Storage;
+using Scynett.Hubtel.Payments.Options;
+
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
 
-internal sealed class PendingTransactionsWorker(
-    IPendingTransactionsStore store,
-    IDirectReceiveMoney directReceiveMoney,
-    IOptions<PendingTransactionsWorkerOptions> options,
-    ILogger<PendingTransactionsWorker> logger)
-    : BackgroundService
+internal sealed class PendingTransactionsWorker : BackgroundService
 {
+    private readonly IPendingTransactionsStore _store;
+    private readonly IOptions<PendingTransactionsWorkerOptions> _options;
+    private readonly ILogger<PendingTransactionsWorker> _logger;
+    private readonly IServiceProvider _serviceProvider;
+
+    public PendingTransactionsWorker(
+        IPendingTransactionsStore store,
+        IOptions<PendingTransactionsWorkerOptions> options,
+        ILogger<PendingTransactionsWorker> logger,
+        IServiceProvider serviceProvider)
+    {
+        _store = store;
+        _options = options;
+        _logger = logger;
+        _serviceProvider = serviceProvider; // Store the service provider
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var pollInterval = options.Value.PollInterval;
+        var pollInterval = _options.Value.PollInterval;
 
-        PendingTransactionsWorkerLogMessages.Started(logger, pollInterval);
+        PendingTransactionsWorkerLogMessages.Started(_logger, pollInterval);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -49,14 +62,14 @@ internal sealed class PendingTransactionsWorker(
             return;
         }
 
-        var callbackWait = options.Value.CallbackGracePeriod;
+        var callbackWait = _options.Value.CallbackGracePeriod;
 
         try
         {
-            var pending = await store.GetAllAsync(stoppingToken).ConfigureAwait(false);
-            PendingTransactionsWorkerLogMessages.Polling(logger, pending.Count);
+            var pending = await _store.GetAllAsync(stoppingToken).ConfigureAwait(false);
+            PendingTransactionsWorkerLogMessages.Polling(_logger, pending.Count);
 
-            var batchSize = options.Value.BatchSize;
+            var batchSize = _options.Value.BatchSize;
             var items = batchSize > 0 ? pending.Take(batchSize) : pending;
 
             foreach (var transaction in items)
@@ -68,14 +81,14 @@ internal sealed class PendingTransactionsWorker(
                 {
                     if (DateTimeOffset.UtcNow - transaction.CreatedAtUtc < callbackWait)
                     {
-                        PendingTransactionsWorkerLogMessages.TooEarly(logger, transaction.HubtelTransactionId);
+                        PendingTransactionsWorkerLogMessages.TooEarly(_logger, transaction.HubtelTransactionId);
                         continue;
                     }
 
                     if (string.IsNullOrWhiteSpace(transaction.HubtelTransactionId))
                     {
                         PendingTransactionsWorkerLogMessages.StatusFailed(
-                            logger,
+                            _logger,
                             "unknown",
                             "MissingTransactionId",
                             "Pending transaction is missing HubtelTransactionId.");
@@ -84,42 +97,48 @@ internal sealed class PendingTransactionsWorker(
 
                     var query = new TransactionStatusQuery(HubtelTransactionId: transaction.HubtelTransactionId);
 
-                    var result = await directReceiveMoney
-                        .CheckStatusAsync(query, stoppingToken)
-                        .ConfigureAwait(false);
-
-                    if (result.IsFailure)
+                    
+                    using (var scope = _serviceProvider.CreateScope())
                     {
-                        PendingTransactionsWorkerLogMessages.StatusFailed(
-                            logger,
-                            transaction.HubtelTransactionId,
-                            result.Error?.Code,
-                            result.Error?.Description);
+                        var directReceiveMoney = scope.ServiceProvider.GetRequiredService<IDirectReceiveMoney>();
 
-                        continue;
-                    }
+                        var result = await directReceiveMoney
+                            .CheckStatusAsync(query, stoppingToken)
+                            .ConfigureAwait(false);
 
-                    var status = result.Value?.Status ?? "Unknown";
+                        if (result.IsFailure)
+                        {
+                            PendingTransactionsWorkerLogMessages.StatusFailed(
+                                _logger,
+                                transaction.HubtelTransactionId,
+                                result.Error?.Code,
+                                result.Error?.Description);
 
-                    if (IsFinal(status))
-                    {
-                        await store.RemoveAsync(transaction.HubtelTransactionId, stoppingToken).ConfigureAwait(false);
-                        PendingTransactionsWorkerLogMessages.Completed(logger, transaction.HubtelTransactionId, status);
-                    }
-                    else
-                    {
-                        PendingTransactionsWorkerLogMessages.StillPending(logger, transaction.HubtelTransactionId, status);
+                            continue;
+                        }
+
+                        var status = result.Value?.Status ?? "Unknown";
+
+                        if (IsFinal(status))
+                        {
+                            await _store.RemoveAsync(transaction.HubtelTransactionId, stoppingToken).ConfigureAwait(false);
+                            PendingTransactionsWorkerLogMessages.Completed(_logger, transaction.HubtelTransactionId, status);
+                        }
+                        else
+                        {
+                            PendingTransactionsWorkerLogMessages.StillPending(_logger, transaction.HubtelTransactionId, status);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    PendingTransactionsWorkerLogMessages.ProcessingError(logger, ex, transaction.HubtelTransactionId);
+                    PendingTransactionsWorkerLogMessages.ProcessingError(_logger, ex, transaction.HubtelTransactionId);
                 }
             }
         }
         catch (Exception ex)
         {
-            PendingTransactionsWorkerLogMessages.LoopError(logger, ex);
+            PendingTransactionsWorkerLogMessages.LoopError(_logger, ex);
         }
     }
 
@@ -130,5 +149,3 @@ internal sealed class PendingTransactionsWorker(
         || status.Equals("unpaid", StringComparison.OrdinalIgnoreCase)
         || status.Equals("refunded", StringComparison.OrdinalIgnoreCase);
 }
-
-

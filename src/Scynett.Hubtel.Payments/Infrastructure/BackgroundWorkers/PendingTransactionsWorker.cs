@@ -1,30 +1,56 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Scynett.Hubtel.Payments.Application.Common;
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Status;
-using Scynett.Hubtel.Payments.Options;
-using Scynett.Hubtel.Payments.Infrastructure.Storage;
 using Scynett.Hubtel.Payments.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.Infrastructure.Storage;
+using Scynett.Hubtel.Payments.Options;
 
 namespace Scynett.Hubtel.Payments.Infrastructure.BackgroundWorkers;
 
-internal sealed class PendingTransactionsWorker(
-    IPendingTransactionsStore store,
-    IDirectReceiveMoney directReceiveMoney,
-    IOptions<PendingTransactionsWorkerOptions> options,
-    ILogger<PendingTransactionsWorker> logger)
-    : BackgroundService
+internal sealed class PendingTransactionsWorker : BackgroundService
 {
+    private readonly IServiceScopeFactory? _scopeFactory;
+    private readonly IPendingTransactionsStore? _store;
+    private readonly IDirectReceiveMoney? _directReceiveMoney;
+    private readonly IOptions<PendingTransactionsWorkerOptions> _options;
+    private readonly ILogger<PendingTransactionsWorker> _logger;
+
+    // ✅ Production constructor (used by DI)
+    public PendingTransactionsWorker(
+        IServiceScopeFactory scopeFactory,
+        IOptions<PendingTransactionsWorkerOptions> options,
+        ILogger<PendingTransactionsWorker> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _options = options;
+        _logger = logger;
+    }
+
+    // ✅ Test constructor (used by your unit tests)
+    internal PendingTransactionsWorker(
+        IPendingTransactionsStore store,
+        IDirectReceiveMoney directReceiveMoney,
+        IOptions<PendingTransactionsWorkerOptions> options,
+        ILogger<PendingTransactionsWorker> logger)
+    {
+        _store = store;
+        _directReceiveMoney = directReceiveMoney;
+        _options = options;
+        _logger = logger;
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var pollInterval = options.Value.PollInterval;
+        var pollInterval = _options.Value.PollInterval;
 
-        PendingTransactionsWorkerLogMessages.Started(logger, pollInterval);
+        PendingTransactionsWorkerLogMessages.Started(_logger, pollInterval);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -36,27 +62,38 @@ internal sealed class PendingTransactionsWorker(
             }
             catch (OperationCanceledException)
             {
-                // shutdown
+                // Graceful shutdown
             }
         }
     }
 
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Background worker must swallow exceptions and continue polling.")]
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Background worker must swallow exceptions and continue polling.")]
     internal async Task ProcessBatchAsync(CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
-        {
             return;
-        }
 
-        var callbackWait = options.Value.CallbackGracePeriod;
+        var callbackWait = _options.Value.CallbackGracePeriod;
 
         try
         {
-            var pending = await store.GetAllAsync(stoppingToken).ConfigureAwait(false);
-            PendingTransactionsWorkerLogMessages.Polling(logger, pending.Count);
+            using var scope = _scopeFactory?.CreateScope();
 
-            var batchSize = options.Value.BatchSize;
+            var store = _store
+                ?? scope!.ServiceProvider.GetRequiredService<IPendingTransactionsStore>();
+
+            var directReceiveMoney = _directReceiveMoney
+                ?? scope!.ServiceProvider.GetRequiredService<IDirectReceiveMoney>();
+
+            var pending = await store.GetAllAsync(stoppingToken)
+                                     .ConfigureAwait(false);
+
+            PendingTransactionsWorkerLogMessages.Polling(_logger, pending.Count);
+
+            var batchSize = _options.Value.BatchSize;
             var items = batchSize > 0 ? pending.Take(batchSize) : pending;
 
             foreach (var transaction in items)
@@ -68,21 +105,26 @@ internal sealed class PendingTransactionsWorker(
                 {
                     if (DateTimeOffset.UtcNow - transaction.CreatedAtUtc < callbackWait)
                     {
-                        PendingTransactionsWorkerLogMessages.TooEarly(logger, transaction.HubtelTransactionId);
+                        PendingTransactionsWorkerLogMessages.TooEarly(
+                            _logger,
+                            transaction.HubtelTransactionId);
+
                         continue;
                     }
 
                     if (string.IsNullOrWhiteSpace(transaction.HubtelTransactionId))
                     {
                         PendingTransactionsWorkerLogMessages.StatusFailed(
-                            logger,
+                            _logger,
                             "unknown",
                             "MissingTransactionId",
                             "Pending transaction is missing HubtelTransactionId.");
+
                         continue;
                     }
 
-                    var query = new TransactionStatusQuery(HubtelTransactionId: transaction.HubtelTransactionId);
+                    var query = new TransactionStatusQuery(
+                        HubtelTransactionId: transaction.HubtelTransactionId);
 
                     var result = await directReceiveMoney
                         .CheckStatusAsync(query, stoppingToken)
@@ -91,7 +133,7 @@ internal sealed class PendingTransactionsWorker(
                     if (result.IsFailure)
                     {
                         PendingTransactionsWorkerLogMessages.StatusFailed(
-                            logger,
+                            _logger,
                             transaction.HubtelTransactionId,
                             result.Error?.Code,
                             result.Error?.Description);
@@ -103,23 +145,36 @@ internal sealed class PendingTransactionsWorker(
 
                     if (IsFinal(status))
                     {
-                        await store.RemoveAsync(transaction.HubtelTransactionId, stoppingToken).ConfigureAwait(false);
-                        PendingTransactionsWorkerLogMessages.Completed(logger, transaction.HubtelTransactionId, status);
+                        await store.RemoveAsync(
+                                transaction.HubtelTransactionId,
+                                stoppingToken)
+                            .ConfigureAwait(false);
+
+                        PendingTransactionsWorkerLogMessages.Completed(
+                            _logger,
+                            transaction.HubtelTransactionId,
+                            status);
                     }
                     else
                     {
-                        PendingTransactionsWorkerLogMessages.StillPending(logger, transaction.HubtelTransactionId, status);
+                        PendingTransactionsWorkerLogMessages.StillPending(
+                            _logger,
+                            transaction.HubtelTransactionId,
+                            status);
                     }
                 }
                 catch (Exception ex)
                 {
-                    PendingTransactionsWorkerLogMessages.ProcessingError(logger, ex, transaction.HubtelTransactionId);
+                    PendingTransactionsWorkerLogMessages.ProcessingError(
+                        _logger,
+                        ex,
+                        transaction.HubtelTransactionId);
                 }
             }
         }
         catch (Exception ex)
         {
-            PendingTransactionsWorkerLogMessages.LoopError(logger, ex);
+            PendingTransactionsWorkerLogMessages.LoopError(_logger, ex);
         }
     }
 
@@ -130,5 +185,3 @@ internal sealed class PendingTransactionsWorker(
         || status.Equals("unpaid", StringComparison.OrdinalIgnoreCase)
         || status.Equals("refunded", StringComparison.OrdinalIgnoreCase);
 }
-
-

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.12](https://github.com/scynett/Scynett.Hubtel.Payments/compare/Scynett.Hubtel.Payments-v0.1.11...Scynett.Hubtel.Payments-v0.1.12) (2026-03-11)
+
+
+### Bug Fixes
+
+* Added a Comment on OnCompletedAsync Method ([09630d2](https://github.com/scynett/Scynett.Hubtel.Payments/commit/09630d250bde481fc5452fbc968fa8fde8e3fbfa))
+* Added a Comment on OnCompletedAsync Method ([#14](https://github.com/scynett/Scynett.Hubtel.Payments/issues/14)) ([5def7d0](https://github.com/scynett/Scynett.Hubtel.Payments/commit/5def7d0677e0c48c2a065f63d509d597cfb64710))
+* Added a Sample project to test the Hubtel Payment Lib ([cb967d5](https://github.com/scynett/Scynett.Hubtel.Payments/commit/cb967d5e05ca41f497f190e55fc0e81d9aaef2c7))
+* Added a Sample project to test the Hubtel Payment Lib ([#12](https://github.com/scynett/Scynett.Hubtel.Payments/issues/12)) ([c0192fb](https://github.com/scynett/Scynett.Hubtel.Payments/commit/c0192fbd2b7beec25501787ff5fea223b50aa64d))
+
 ## [0.1.11](https://github.com/scynett/Scynett.Hubtel.Payments/compare/Scynett.Hubtel.Payments-v0.1.10...Scynett.Hubtel.Payments-v0.1.11) (2026-02-09)
 
 

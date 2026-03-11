@@ -1,0 +1,6 @@
+@Scynett.Hubtel.Payments.Samples.Web_HostAddress = http://localhost:5281
+
+GET {{Scynett.Hubtel.Payments.Samples.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

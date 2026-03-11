@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13](https://github.com/scynett/Scynett.Hubtel.Payments/compare/Scynett.Hubtel.Payments-v0.1.12...Scynett.Hubtel.Payments-v0.1.13) (2026-03-11)
+
+
+### Bug Fixes
+
+* Added Comment to endpoint ([d625f08](https://github.com/scynett/Scynett.Hubtel.Payments/commit/d625f08f5177ccaab235099ae1289e253c55f68f))
+* Added Comment to endpoint ([#15](https://github.com/scynett/Scynett.Hubtel.Payments/issues/15)) ([a647c15](https://github.com/scynett/Scynett.Hubtel.Payments/commit/a647c159b32b08a8203a57343f93362a8aa496d9))
+
 ## [0.1.12](https://github.com/scynett/Scynett.Hubtel.Payments/compare/Scynett.Hubtel.Payments-v0.1.11...Scynett.Hubtel.Payments-v0.1.12) (2026-03-11)
 
 

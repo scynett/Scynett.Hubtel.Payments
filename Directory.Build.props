@@ -40,7 +40,7 @@
 
   <!-- Centralised versioning (SemVer, tag-driven) -->
   <PropertyGroup>
-    <Version>0.1.12</Version>
+    <Version>0.1.13</Version>
   </PropertyGroup>
 
   <!-- Apply to all projects -->

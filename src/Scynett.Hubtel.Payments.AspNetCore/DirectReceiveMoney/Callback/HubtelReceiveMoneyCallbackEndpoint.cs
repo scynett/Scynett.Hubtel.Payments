@@ -41,7 +41,18 @@ internal static class HubtelReceiveMoneyCallbackEndpoint
 
                 // 200 OK means "callback processed", not "payment succeeded".
                 if (result.IsSuccess)
+                {
+                    var callbackResult = result.Value;
+                    var handlers = context.RequestServices.GetServices<IReceiveMoneyCallbackHandler>();
+                    foreach (var handler in handlers)
+                    {
+                        await handler
+                            .OnCompletedAsync(callbackResult, ct)
+                            .ConfigureAwait(false);
+                    }
+
                     return Results.Ok();
+                }
 
                 // No dependency on Scynett.Common.Domain here:
                 var code = result.Error?.Code ?? "Hubtel.Callback.Error";

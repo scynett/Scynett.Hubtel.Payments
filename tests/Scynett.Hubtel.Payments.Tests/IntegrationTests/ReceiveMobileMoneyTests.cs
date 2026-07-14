@@ -65,9 +65,9 @@ public sealed class ReceiveMobileMoneyTests
         await direct.InitiateAsync(request, CancellationToken.None);
 
         var entry = _fixture.HubtelMock.LogEntries
-            .Last(e => e.RequestMessage.Path.Contains("/receive/mobilemoney", StringComparison.OrdinalIgnoreCase));
+            .Last(e => e.RequestMessage?.Path?.Contains("/receive/mobilemoney", StringComparison.OrdinalIgnoreCase) == true);
 
-        entry.RequestMessage.Body.Should().Contain($"\"PrimaryCallbackUrl\":\"{callback}\"")
+        entry.RequestMessage!.Body.Should().Contain($"\"PrimaryCallbackUrl\":\"{callback}\"")
             .And.NotContain("PrimaryCallbackEndpoint");
     }
 }

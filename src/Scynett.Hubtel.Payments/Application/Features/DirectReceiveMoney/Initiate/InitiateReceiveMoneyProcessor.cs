@@ -50,12 +50,19 @@ internal sealed class InitiateReceiveMoneyProcessor(
             activity?.SetTag("hubtel.clientReference", request.ClientReference);
             activity?.SetTag("hubtel.channel", request.Channel);
 
-            InitiateReceiveMoneyLogMessages.Initiating(
-                logger,
-                request.ClientReference,
-                request.Amount,
-                request.Channel,
-                MaskMsisdn(request.CustomerMobileNumber));
+            // MaskMsisdn allocates, so it must not run when the level is disabled (CA1873).
+            // The masked value is hoisted into a local so the argument itself is a cheap read.
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                var maskedMsisdn = MaskMsisdn(request.CustomerMobileNumber);
+
+                InitiateReceiveMoneyLogMessages.Initiating(
+                    logger,
+                    request.ClientReference,
+                    request.Amount,
+                    request.Channel,
+                    maskedMsisdn);
+            }
 
             // Determine which POS Sales ID to use
             var posSalesId = !string.IsNullOrWhiteSpace(directReceiveMoneyOptions.Value.PosSalesId)
@@ -96,8 +103,8 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 logger,
                 request.ClientReference,
                 decision.Code,
-                decision.Category.ToString(),
-                decision.NextAction.ToString(),
+                decision.Category,
+                decision.NextAction,
                 decision.IsFinal);
 
             // 5) Persist pending when waiting for callback

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/scynett/Scynett.Hubtel.Payments/compare/Scynett.Hubtel.Payments-v0.1.13...Scynett.Hubtel.Payments-v0.2.0) (2026-07-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* never report an undetermined payment as a failed payment ([#17](https://github.com/scynett/Scynett.Hubtel.Payments/issues/17))
+* An unknown Hubtel response code and any transport/non-2xx failure are no longer reported as final failures. Callers that mark a transaction failed on error code DirectReceiveMoney.Unknown must instead treat it as undetermined and resolve it with a Transaction Status API enquiry. HTTP failures now surface as the new error code DirectReceiveMoney.TransientError rather than DirectReceiveMoney.Unknown. The callback endpoint now answers 401/409/500 where it previously answered 400. AddHubtelPayments validates HubtelOptions on startup, so any environment that does not bind a non-empty Hubtel ClientId and ClientSecret will now fail to start.
+
+### Features
+
+* never report an undetermined payment as a failed payment ([0cea4b8](https://github.com/scynett/Scynett.Hubtel.Payments/commit/0cea4b8b16eedc48027ef77788f9c7e45aab9e21))
+* never report an undetermined payment as a failed payment ([#17](https://github.com/scynett/Scynett.Hubtel.Payments/issues/17)) ([04188d6](https://github.com/scynett/Scynett.Hubtel.Payments/commit/04188d6f1d6c6686f1ca694aad68d8ced208feef))
+
+
+### Bug Fixes
+
+* **build:** repair broken restore and CA1873 analyzer failures ([abe5c98](https://github.com/scynett/Scynett.Hubtel.Payments/commit/abe5c9830ed8bad1e716cb3abd6a24b4fc2d9148))
+* treat Polly timeouts and open circuits as undetermined, not failed ([87fd43b](https://github.com/scynett/Scynett.Hubtel.Payments/commit/87fd43b8c7cf6e824e6be22b66b47492ceab602f))
+
 ## [0.1.13](https://github.com/scynett/Scynett.Hubtel.Payments/compare/Scynett.Hubtel.Payments-v0.1.12...Scynett.Hubtel.Payments-v0.1.13) (2026-03-11)
 
 

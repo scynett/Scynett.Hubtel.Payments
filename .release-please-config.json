@@ -1,7 +1,9 @@
 {
   "release-type": "node",
+  "bump-minor-pre-major": true,
   "packages": {
     ".": {
+      "bump-minor-pre-major": true,
       "package-name": "Scynett.Hubtel.Payments",
       "extra-files": [
         {

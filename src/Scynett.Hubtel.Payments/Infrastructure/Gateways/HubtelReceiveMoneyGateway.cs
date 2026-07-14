@@ -1,3 +1,6 @@
+using Polly.CircuitBreaker;
+using Polly.Timeout;
+
 using Refit;
 
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways;
@@ -101,6 +104,23 @@ internal sealed class HubtelReceiveMoneyGateway(
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             // Client-side timeout: the request may well have reached Hubtel. Never final.
+            return HttpErrorResult(statusCode: null, message: ex.Message);
+        }
+        catch (TimeoutRejectedException ex)
+        {
+            // The Polly timeout, NOT HttpClient's. AddHubtelPayments wraps this client in
+            // AddStandardResilienceHandler, whose timeout strategy throws this rather than
+            // TaskCanceledException — so without this catch, a timed-out request escaped as an
+            // unhandled exception and the caller was told the payment FAILED. That is the precise
+            // scenario this whole class exists to stop: Hubtel may already have debited the customer.
+            return HttpErrorResult(statusCode: null, message: ex.Message);
+        }
+        catch (BrokenCircuitException ex)
+        {
+            // Same resilience pipeline, same reasoning. An open circuit means we did not send this
+            // request — but "we did not send it" is still not "the payment failed", and the circuit
+            // opened because earlier requests were failing, some of which may have reached Hubtel.
+            // Non-final and retryable.
             return HttpErrorResult(statusCode: null, message: ex.Message);
         }
     }

@@ -99,13 +99,18 @@ internal static class HubtelReceiveMoneyCallbackEndpoint
     /// Chooses the HTTP status for a failed callback. The rule that matters: anything that might succeed
     /// on a second delivery must NOT be a 4xx, because Hubtel stops retrying once it sees one.
     /// </summary>
-    private static int ResolveFailureStatusCode(Error? error) => error?.Type switch
+    internal static int ResolveFailureStatusCode(Error? error) => error?.Type switch
     {
         // Malformed / invalid payload. Retrying will not help.
         ErrorType.Validation => StatusCodes.Status400BadRequest,
 
-        // Same callback already being processed (Hubtel.Callback.InFlight). Ask Hubtel to come back.
-        ErrorType.Conflict => StatusCodes.Status409Conflict,
+        // Same callback already being processed (Hubtel.Callback.InFlight). We have NOT finished with
+        // it, so we must not acknowledge it. 409 would have done exactly that — it is a 4xx, and the
+        // rule above admits no exceptions: a 4xx tells Hubtel to stop retrying. If the in-flight
+        // delivery then dies, that callback is gone and nobody is coming back. 503 asks Hubtel to try
+        // again; the duplicate it sends is absorbed by the same dedupe check that produced this
+        // conflict, so the cost of being wrong here is one wasted callback, not a lost payment.
+        ErrorType.Conflict => StatusCodes.Status503ServiceUnavailable,
 
         // Everything else (Problem / Failure / NotFound / unknown) is treated as transient: we failed to
         // process a callback we should have processed, so Hubtel must retry.

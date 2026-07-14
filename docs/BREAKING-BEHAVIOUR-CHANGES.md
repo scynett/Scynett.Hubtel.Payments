@@ -72,7 +72,7 @@ longer be thrown — if you catch it by message, remove that. The information no
 
 ---
 
-## 4. Callback endpoint: transient failures now return 5xx, in-flight returns 409
+## 4. Callback endpoint: anything that might succeed on redelivery now returns 5xx
 
 **Was:** every unsuccessful outcome returned **400 Bad Request** — including a processing failure and the
 `Hubtel.Callback.InFlight` conflict.
@@ -88,7 +88,7 @@ was never reconciled.
 | Processed | 200 | 200 (unchanged) |
 | Malformed payload / failed validation (`ErrorType.Validation`) | 400 | 400 (unchanged) |
 | Shared-secret / source-IP check failed | 400 | **401** |
-| `Hubtel.Callback.InFlight` (`ErrorType.Conflict`) | 400 | **409** |
+| `Hubtel.Callback.InFlight` (`ErrorType.Conflict`) | 400 | **503** |
 | Processing failure (`Problem` / `Failure` / anything else) | 400 | **500** |
 
 The response body shape is unchanged: `{ "error": "<code>", "message": "<description>" }`.

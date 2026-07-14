@@ -5,6 +5,9 @@ using FluentAssertions;
 
 using Moq;
 
+using Polly.CircuitBreaker;
+using Polly.Timeout;
+
 using Refit;
 
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
@@ -105,6 +108,46 @@ public sealed class HubtelReceiveMoneyGatewayTests : UnitTestBase
         result.HttpStatusCode.Should().BeNull("no response was ever received");
         HubtelResponseDecisionFactory.Create(result.ResponseCode).IsFinal.Should().BeFalse();
     }
+
+    /// <summary>
+    /// The Polly timeout, not HttpClient's. <c>AddHubtelPayments</c> wraps this client in
+    /// <c>AddStandardResilienceHandler</c>, whose strategies throw their own exception types —
+    /// <see cref="TimeoutRejectedException"/> and <see cref="BrokenCircuitException"/> — rather than
+    /// <see cref="TaskCanceledException"/>. Before these were caught they escaped as unhandled and the
+    /// caller was told the payment had FAILED, in exactly the two situations where Hubtel is most
+    /// likely to have taken the customer's money and not told us.
+    /// </summary>
+    /// <param name="exception">The exception the resilience pipeline throws.</param>
+    /// <returns>A task.</returns>
+    [Theory]
+    [MemberData(nameof(ResilienceExceptions))]
+    public async Task InitiateAsync_ShouldMapResilienceFailure_ToHttpErrorAndNeverFinal(Exception exception)
+    {
+        var api = new Mock<IHubtelDirectReceiveMoneyApi>();
+        api.Setup(x => x.InitiateAsync(
+                It.IsAny<string>(),
+                It.IsAny<InitiateReceiveMoneyRequestDto>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(exception);
+
+        var sut = new HubtelReceiveMoneyGateway(api.Object);
+
+        var result = await sut.InitiateAsync(CreateRequest(), CancellationToken.None);
+
+        result.ResponseCode.Should().Be(HubtelResponseDecisionFactory.HttpErrorCode);
+        result.HttpStatusCode.Should().BeNull("no response was ever received");
+
+        var decision = HubtelResponseDecisionFactory.Create(result.ResponseCode);
+        decision.IsFinal.Should().BeFalse("a timed-out or circuit-broken payment is undetermined, not failed");
+        decision.ShouldRetry.Should().BeTrue();
+        decision.Category.Should().Be(ResponseCategory.TransientError);
+    }
+
+    public static TheoryData<Exception> ResilienceExceptions() => new()
+    {
+        new TimeoutRejectedException("the resilience pipeline timed out"),
+        new BrokenCircuitException("the circuit is open"),
+    };
 
     [Fact]
     public async Task InitiateAsync_ShouldReturnHubtelPayload_OnSuccess()

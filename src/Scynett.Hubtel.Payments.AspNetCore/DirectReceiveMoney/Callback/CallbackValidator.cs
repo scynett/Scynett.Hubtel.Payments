@@ -1,4 +1,6 @@
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -6,6 +8,33 @@ using Microsoft.Extensions.Options;
 
 namespace Scynett.Hubtel.Payments.AspNetCore.DirectReceiveMoney.Callback;
 
+/// <summary>
+/// Guards the Hubtel callback endpoint with an optional pre-shared secret header and an optional
+/// source-IP allow list.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>This is NOT signature verification.</b> Hubtel does <b>not</b> sign its callbacks: there is no HMAC,
+/// no digest of the body, and nothing tying the payload to your account. The "signature" naming used by
+/// <see cref="CallbackValidationOptions.SignatureHeaderName"/> and by the
+/// <c>Hubtel.Callback.InvalidSignature</c> error code is historical and misleading. All this class can do
+/// is check that the caller echoes back a shared secret you configured (and, optionally, that it came from
+/// an expected IP range) — it proves nothing about the <i>content</i> of the callback, which is not
+/// authenticated and could have been tampered with in transit by anyone able to reach your endpoint.
+/// </para>
+/// <para>
+/// <b>Therefore: a callback is a hint, not proof of payment.</b> Callers MUST independently verify the
+/// transaction against Hubtel's Transaction Status API before crediting a wallet, releasing goods, or
+/// otherwise treating money as received. Never settle on the strength of a callback body alone.
+/// </para>
+/// <para>
+/// <b>Behaviour change (SDK hardening):</b> the shared-secret comparison now uses
+/// <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/> over the
+/// UTF-8 bytes instead of <see cref="string.Equals(string, string, StringComparison)"/>, which short-circuits
+/// on the first differing character and therefore leaks the secret to a timing attack. Correct secrets are
+/// still accepted and wrong secrets still rejected — only the timing profile changes.
+/// </para>
+/// </remarks>
 public sealed class CallbackValidator : ICallbackValidator
 {
     private readonly CallbackValidationOptions _options;
@@ -19,8 +48,15 @@ public sealed class CallbackValidator : ICallbackValidator
         _logger = logger;
     }
 
+    /// <summary>
+    /// Checks the shared secret header and source IP of an inbound Hubtel callback.
+    /// A successful result means "this request looks like it came from your Hubtel integration",
+    /// NOT "this payment happened" — verify with the Transaction Status API before treating it as money.
+    /// </summary>
     public Task<CallbackValidationResult> ValidateAsync(HttpContext context, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         if (!_options.EnableValidation)
         {
             return Task.FromResult(CallbackValidationResult.Success);
@@ -29,12 +65,12 @@ public sealed class CallbackValidator : ICallbackValidator
         if (!string.IsNullOrWhiteSpace(_options.SharedSecret))
         {
             if (!context.Request.Headers.TryGetValue(_options.SignatureHeaderName, out var headerValue) ||
-                !string.Equals(headerValue.ToString(), _options.SharedSecret, StringComparison.Ordinal))
+                !SecretsMatch(headerValue.ToString(), _options.SharedSecret))
             {
                 _logger.LogWarning("Callback validation failed due to invalid shared secret.");
                 return Task.FromResult(CallbackValidationResult.Failure(
                     "Hubtel.Callback.InvalidSignature",
-                    "Callback signature validation failed."));
+                    "Callback shared-secret validation failed."));
             }
         }
 
@@ -51,6 +87,18 @@ public sealed class CallbackValidator : ICallbackValidator
         }
 
         return Task.FromResult(CallbackValidationResult.Success);
+    }
+
+    /// <summary>
+    /// Constant-time comparison of the presented secret against the configured one.
+    /// Lengths are compared in the clear (an attacker learns only the secret's length, not its bytes).
+    /// </summary>
+    private static bool SecretsMatch(string? presented, string expected)
+    {
+        var presentedBytes = Encoding.UTF8.GetBytes(presented ?? string.Empty);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+
+        return CryptographicOperations.FixedTimeEquals(presentedBytes, expectedBytes);
     }
 
     private bool IsIpAllowed(IPAddress remoteIp)

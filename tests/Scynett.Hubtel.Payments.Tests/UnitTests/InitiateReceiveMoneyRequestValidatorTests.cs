@@ -3,6 +3,7 @@ using System.Globalization;
 using FluentValidation.TestHelper;
 
 using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
+using Scynett.Hubtel.Payments.Options;
 using Scynett.Hubtel.Payments.Tests.Testing.TestBases;
 
 namespace Scynett.Hubtel.Payments.Tests.UnitTests;
@@ -86,6 +87,52 @@ internal class InitiateReceiveMoneyRequestValidatorTests : UnitTestBase
         var result = _sut.TestValidate(request);
 
         result.ShouldHaveValidationErrorFor(x => x.Channel);
+    }
+
+    // Hubtel's current channels: Vodafone Ghana became Telecel, Tigo became AirtelTigo.
+    [Theory]
+    [InlineData("mtn-gh")]
+    [InlineData("telecel-gh")]
+    [InlineData("at-gh")]
+    [InlineData("airteltigo")]
+    [InlineData("TELECEL-GH")]
+    public void Validate_ShouldPass_WhenChannelIsCurrent(string channel)
+    {
+        var request = InitiateReceiveMoneyRequestBuilder.ValidRequest() with { Channel = channel };
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Channel);
+    }
+
+    // Backward compatibility: anything that used to validate must keep validating.
+    [Theory]
+    [InlineData("mtn-gh")]
+    [InlineData("vodafone-gh")]
+    [InlineData("tigo-gh")]
+    public void Validate_ShouldStillPass_WhenChannelIsLegacy(string channel)
+    {
+        var request = InitiateReceiveMoneyRequestBuilder.ValidRequest() with { Channel = channel };
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Channel);
+    }
+
+    [Fact]
+    public void Validate_ShouldHonourConfiguredChannels_WhenAllowedChannelsIsSet()
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new DirectReceiveMoneyOptions
+        {
+            AllowedChannels = ["future-gh"]
+        });
+        var sut = new InitiateReceiveMoneyRequestValidator(options);
+
+        sut.TestValidate(InitiateReceiveMoneyRequestBuilder.ValidRequest() with { Channel = "future-gh" })
+            .ShouldNotHaveValidationErrorFor(x => x.Channel);
+
+        sut.TestValidate(InitiateReceiveMoneyRequestBuilder.ValidRequest() with { Channel = "mtn-gh" })
+            .ShouldHaveValidationErrorFor(x => x.Channel);
     }
 
     [Fact]

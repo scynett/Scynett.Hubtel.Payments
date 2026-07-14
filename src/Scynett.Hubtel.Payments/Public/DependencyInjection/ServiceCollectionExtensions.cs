@@ -26,8 +26,22 @@ namespace Scynett.Hubtel.Payments.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers the Hubtel payments SDK.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Behaviour change (SDK hardening):</b> this now validates <see cref="HubtelOptions"/> eagerly
+    /// (<c>ValidateOnStart</c>). An app with a missing Hubtel ClientId/ClientSecret used to start happily and
+    /// fail with a 401 from Hubtel on the first real payment attempt; it now fails fast at host startup with
+    /// "Hubtel ClientId and ClientSecret must be provided".
+    /// </para>
+    /// </remarks>
     public static IServiceCollection AddHubtelPayments(this IServiceCollection services, Action<PendingTransactionsWorkerOptions>? configure = null)
     {
+        // Fail at startup, not at the till: missing credentials are a deployment error.
+        AddHubtelOptionsValidation(services);
+
         services.TryAddSingleton<IPendingTransactionsStore, InMemoryPendingTransactionsStore>();
         services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         services.TryAddSingleton<ICallbackAuditStore, InMemoryCallbackAuditStore>();
@@ -100,6 +114,23 @@ public static class ServiceCollectionExtensions
 
         services.AddHostedService<PendingTransactionsWorker>();
         return services;
+    }
+
+    /// <summary>
+    /// Eager validation of the Hubtel credentials. Private (not an extension method) on purpose: the public
+    /// entry point lives in ScynettPayments.AspNetCore
+    /// (<c>Scynett.Hubtel.Payments.AspNetCore.DependencyInjection.OptionsValidationExtensions</c>) and adding a
+    /// second extension method of the same name here would make the two ambiguous for consumers importing both
+    /// namespaces.
+    /// </summary>
+    private static void AddHubtelOptionsValidation(IServiceCollection services)
+    {
+        services.AddOptions<HubtelOptions>()
+            .Validate(o =>
+                !string.IsNullOrWhiteSpace(o.ClientId) &&
+                !string.IsNullOrWhiteSpace(o.ClientSecret),
+                "Hubtel ClientId and ClientSecret must be provided")
+            .ValidateOnStart();
     }
 
     private static Uri ResolveBaseAddress(string? configured, string optionName)

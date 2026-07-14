@@ -139,7 +139,40 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 gatewayResponse,
                 decision);
 
-            // 7) Check if this is a failure scenario that should return failure
+            // 7a) Transport/unknown outcome: we do NOT know whether the customer was debited.
+            // This is a failure to *obtain an answer*, not a failed payment. The error is marked
+            // non-final + retryable and carries the HTTP status (when there was one) so the caller
+            // can verify via the Transaction Status API instead of telling the customer it failed.
+            if (!decision.IsSuccess
+                && !decision.IsFinal
+                && decision.Category is ResponseCategory.TransientError or ResponseCategory.Unknown)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, decision.DeveloperHint ?? gatewayResponse.Message);
+                InitiateReceiveMoneyLogMessages.GatewayFailed(
+                    logger,
+                    request.ClientReference,
+                    gatewayResponse.ResponseCode,
+                    gatewayResponse.Message ?? "No message provided");
+
+                var transientError = Error.Problem(
+                        $"DirectReceiveMoney.{decision.Category}",
+                        decision.CustomerMessage ?? gatewayResponse.Message ?? "The payment outcome is not yet known.")
+                    .WithProvider(gatewayResponse.ResponseCode, gatewayResponse.Message)
+                    .WithMetadata("isFinal", "false")
+                    .WithMetadata("shouldRetry", "true")
+                    .WithMetadata("nextAction", decision.NextAction.ToString());
+
+                if (gatewayResponse.HttpStatusCode is int httpStatus)
+                {
+                    transientError = transientError.WithMetadata(
+                        "httpStatusCode",
+                        httpStatus.ToString(CultureInfo.InvariantCulture));
+                }
+
+                return OperationResult<InitiateReceiveMoneyResult>.Failure(transientError);
+            }
+
+            // 7b) Check if this is a failure scenario that should return failure
             if (!decision.IsSuccess && decision.IsFinal)
             {
                 activity?.SetStatus(ActivityStatusCode.Error, decision.CustomerMessage ?? gatewayResponse.Message);

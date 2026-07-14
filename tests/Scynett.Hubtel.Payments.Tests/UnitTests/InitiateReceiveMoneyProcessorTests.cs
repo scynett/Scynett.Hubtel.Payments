@@ -162,6 +162,64 @@ public sealed class InitiateReceiveMoneyProcessorTests : UnitTestBase
             Times.Never);
     }
 
+    // A 5xx from Hubtel is "we do not know", not "the payment failed". The failure that reaches the caller
+    // must be flagged non-final/retryable and must carry the HTTP status so they can go and verify.
+    [Fact]
+    public async Task ProcessAsync_ShouldSurfaceHttpStatusAndNonFinality_WhenGatewayReportsHttpError()
+    {
+        var gateway = new Mock<IHubtelReceiveMoneyGateway>();
+        var pendingStore = new Mock<IPendingTransactionsStore>();
+        gateway.Setup(x => x.InitiateAsync(It.IsAny<GatewayInitiateReceiveMoneyRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GatewayInitiateReceiveMoneyResult(
+                ResponseCode: "HTTP_ERROR",
+                Message: "HTTP 503: upstream unavailable",
+                TransactionId: null,
+                HttpStatusCode: 503));
+
+        var processor = CreateProcessor(
+            gateway,
+            new DirectReceiveMoneyOptions { PosSalesId = "POS-503" },
+            new HubtelOptions { MerchantAccountNumber = "merchant" },
+            pendingStore);
+
+        var result = await processor.ExecuteAsync(
+            InitiateReceiveMoneyRequestBuilder.ValidRequest(),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("DirectReceiveMoney.TransientError");
+        result.Error.ProviderCode.Should().Be("HTTP_ERROR");
+        result.Error.Metadata.Should().NotBeNull();
+        result.Error.Metadata!["httpStatusCode"].Should().Be("503");
+        result.Error.Metadata["isFinal"].Should().Be("false");
+        result.Error.Metadata["shouldRetry"].Should().Be("true");
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldReportUnknownCode_AsNonFinal()
+    {
+        var gateway = new Mock<IHubtelReceiveMoneyGateway>();
+        gateway.Setup(x => x.InitiateAsync(It.IsAny<GatewayInitiateReceiveMoneyRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GatewayInitiateReceiveMoneyResult(
+                ResponseCode: "7777",
+                Message: "Never seen before",
+                TransactionId: null));
+
+        var processor = CreateProcessor(
+            gateway,
+            new DirectReceiveMoneyOptions { PosSalesId = "POS-777" },
+            new HubtelOptions { MerchantAccountNumber = "merchant" });
+
+        var result = await processor.ExecuteAsync(
+            InitiateReceiveMoneyRequestBuilder.ValidRequest(),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("DirectReceiveMoney.Unknown");
+        result.Error.Metadata!["isFinal"].Should().Be("false", "an unknown code is not a final failure");
+        result.Error.Metadata["nextAction"].Should().Be("RetryLater");
+    }
+
     private static InitiateReceiveMoneyProcessor CreateProcessor(
         Mock<IHubtelReceiveMoneyGateway> gateway,
         DirectReceiveMoneyOptions directOptions,

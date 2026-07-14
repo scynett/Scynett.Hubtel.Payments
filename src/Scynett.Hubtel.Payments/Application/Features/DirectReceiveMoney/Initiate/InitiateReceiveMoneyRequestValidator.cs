@@ -1,17 +1,66 @@
 ﻿using FluentValidation;
 
+using Microsoft.Extensions.Options;
+
+using Scynett.Hubtel.Payments.Options;
+
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
 
 
 /// <summary>
 /// Validator for ReceiveMoneyRequest based on Hubtel API specifications.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Behaviour change (SDK hardening):</b> the accepted channel list was stale
+/// (<c>mtn-gh</c>, <c>vodafone-gh</c>, <c>tigo-gh</c>) and rejected Hubtel's current channels.
+/// Vodafone Ghana became Telecel (<c>telecel-gh</c>) and Tigo became AirtelTigo
+/// (<c>at-gh</c> / <c>airteltigo</c>). Those are now accepted. The legacy values remain accepted, so
+/// nothing that used to validate stops validating. Override the list with
+/// <see cref="DirectReceiveMoneyOptions.AllowedChannels"/> if Hubtel changes it again.
+/// </para>
+/// </remarks>
 public class InitiateReceiveMoneyRequestValidator : AbstractValidator<InitiateReceiveMoneyRequest>
 {
-    private static readonly string[] ValidChannels = ["mtn-gh", "vodafone-gh", "tigo-gh"];
+    /// <summary>
+    /// Channels accepted out of the box: Hubtel's current channels plus the superseded ones,
+    /// which are kept for backward compatibility.
+    /// </summary>
+    public static readonly IReadOnlyList<string> DefaultValidChannels =
+    [
+        // Current Hubtel channels
+        "mtn-gh",
+        "telecel-gh",   // replaced vodafone-gh
+        "at-gh",        // replaced tigo-gh
+        "airteltigo",   // alias used by some Hubtel accounts
+        // Legacy channels - still accepted so existing callers never start failing
+        "vodafone-gh",
+        "tigo-gh",
+    ];
 
+    /// <summary>
+    /// Creates a validator using <see cref="DefaultValidChannels"/>.
+    /// </summary>
     public InitiateReceiveMoneyRequestValidator()
+        : this(channels: null)
     {
+    }
+
+    /// <summary>
+    /// Creates a validator honouring <see cref="DirectReceiveMoneyOptions.AllowedChannels"/> when set.
+    /// This overload is the one the DI container resolves.
+    /// </summary>
+    public InitiateReceiveMoneyRequestValidator(IOptions<DirectReceiveMoneyOptions> options)
+        : this(options?.Value?.AllowedChannels)
+    {
+    }
+
+    private InitiateReceiveMoneyRequestValidator(IReadOnlyList<string>? channels)
+    {
+        IReadOnlyList<string> validChannels = channels is { Count: > 0 }
+            ? channels
+            : DefaultValidChannels;
+
         RuleFor(x => x.CustomerName)
         .MaximumLength(100)
         .WithMessage("Customer name must not exceed 100 characters")
@@ -38,8 +87,8 @@ public class InitiateReceiveMoneyRequestValidator : AbstractValidator<InitiateRe
         RuleFor(x => x.Channel)
             .NotEmpty()
             .WithMessage("Payment channel is required (Mandatory)")
-            .Must(channel => ValidChannels.Any(vc => vc.Equals(channel, StringComparison.OrdinalIgnoreCase)))
-            .WithMessage($"Channel must be one of: {string.Join(", ", ValidChannels)}");
+            .Must(channel => validChannels.Any(vc => vc.Equals(channel, StringComparison.OrdinalIgnoreCase)))
+            .WithMessage($"Channel must be one of: {string.Join(", ", validChannels)}");
 
         RuleFor(x => x.Amount)
             .GreaterThan(0)

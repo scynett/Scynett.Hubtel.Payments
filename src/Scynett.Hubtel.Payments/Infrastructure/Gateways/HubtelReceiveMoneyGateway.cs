@@ -1,10 +1,12 @@
-﻿using Refit;
+using Refit;
 
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways;
 using Scynett.Hubtel.Payments.Application.Abstractions.Gateways.DirectReceiveMoney;
+using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney;
 using Scynett.Hubtel.Payments.Infrastructure.Http.Refit.DirectReceiveMoney.Dtos;
 
+using System.Globalization;
 using System.Text.Json;
 
 namespace Scynett.Hubtel.Payments.Infrastructure.Gateways;
@@ -13,6 +15,17 @@ namespace Scynett.Hubtel.Payments.Infrastructure.Gateways;
 /// Infrastructure implementation of IHubtelReceiveMoneyGateway.
 /// Responsible for HTTP, DTO mapping, and transport error handling.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Behaviour change (SDK hardening):</b> the Refit API returns <see cref="ApiResponse{T}"/>, which does
+/// <b>not</b> throw on a non-2xx status. Previously a 4xx/5xx from Hubtel left <c>Content == null</c> and this
+/// class threw <c>InvalidOperationException("Hubtel returned empty response body.")</c>, discarding the HTTP
+/// status entirely (and making the <c>catch (ApiException)</c> branch largely unreachable).
+/// The status is now inspected explicitly: any non-2xx response, transport failure, or missing body is mapped
+/// to the transient <see cref="HubtelResponseDecisionFactory.HttpErrorCode"/> path and the real HTTP status is
+/// carried on <see cref="GatewayInitiateReceiveMoneyResult.HttpStatusCode"/> so it is never lost.
+/// </para>
+/// </remarks>
 internal sealed class HubtelReceiveMoneyGateway(
     IHubtelDirectReceiveMoneyApi api)
     : IHubtelReceiveMoneyGateway
@@ -33,13 +46,28 @@ internal sealed class HubtelReceiveMoneyGateway(
                 Description: request.Description,
                 ClientReference: request.ClientReference);
 
-            var response = await api.InitiateAsync(
+            using var response = await api.InitiateAsync(
                 request.PosSalesId,
                 dto,
                 cancellationToken).ConfigureAwait(false);
 
-            var content = response.Content
-                ?? throw new InvalidOperationException("Hubtel returned empty response body.");
+            // ApiResponse<T> does NOT throw on non-2xx: inspect the status ourselves.
+            if (!response.IsSuccessStatusCode)
+            {
+                return HttpErrorResult(
+                    statusCode: (int)response.StatusCode,
+                    message: DescribeFailure(response));
+            }
+
+            if (response.Content is null)
+            {
+                // 2xx but no/unparseable body - we still do not know the transaction state.
+                return HttpErrorResult(
+                    statusCode: (int)response.StatusCode,
+                    message: "Hubtel returned an empty response body.");
+            }
+
+            var content = response.Content;
 
             return new GatewayInitiateReceiveMoneyResult(
                 ResponseCode: content.ResponseCode,
@@ -57,25 +85,61 @@ internal sealed class HubtelReceiveMoneyGateway(
         }
         catch (ApiException ex)
         {
-            var parsed = TryParseError(ex);
+            // Defensive: Refit only throws this when the interface returns a bare T, but keep the mapping
+            // correct in case the API surface changes.
+            var parsed = TryParseError(ex.Content);
 
-            return new GatewayInitiateReceiveMoneyResult(
-                ResponseCode: "HTTP_ERROR",
-                Message: parsed?.Message ?? ex.Message,
-                TransactionId: null,
-                ExternalReference: null);
+            return HttpErrorResult(
+                statusCode: (int)ex.StatusCode,
+                message: parsed?.Message ?? ex.Message);
+        }
+        catch (HttpRequestException ex)
+        {
+            // Pure transport failure: no response was ever received, so there is no status code to report.
+            return HttpErrorResult(statusCode: null, message: ex.Message);
+        }
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Client-side timeout: the request may well have reached Hubtel. Never final.
+            return HttpErrorResult(statusCode: null, message: ex.Message);
         }
     }
 
-    private static HubtelApiErrorDto? TryParseError(ApiException ex)
+    private static GatewayInitiateReceiveMoneyResult HttpErrorResult(int? statusCode, string? message)
     {
-        if (string.IsNullOrWhiteSpace(ex.Content))
+        var describedMessage = statusCode is null
+            ? message
+            : $"HTTP {statusCode.Value.ToString(CultureInfo.InvariantCulture)}: {message}";
+
+        return new GatewayInitiateReceiveMoneyResult(
+            ResponseCode: HubtelResponseDecisionFactory.HttpErrorCode,
+            Message: describedMessage,
+            TransactionId: null,
+            ExternalReference: null,
+            HttpStatusCode: statusCode);
+    }
+
+    private static string DescribeFailure(ApiResponse<InitiateReceiveMoneyResponseDto> response)
+    {
+        var parsed = TryParseError(response.Error?.Content);
+        if (!string.IsNullOrWhiteSpace(parsed?.Message))
+            return parsed.Message;
+
+        if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+            return response.Error.Message;
+
+        return response.ReasonPhrase ?? "Hubtel returned an unsuccessful HTTP status.";
+    }
+
+    private static HubtelApiErrorDto? TryParseError(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
             return null;
 
 #pragma warning disable CA1031 // Do not catch general exception types
         try
         {
-            return JsonSerializer.Deserialize<HubtelApiErrorDto>(ex.Content);
+            return JsonSerializer.Deserialize<HubtelApiErrorDto>(content);
         }
         catch
         {

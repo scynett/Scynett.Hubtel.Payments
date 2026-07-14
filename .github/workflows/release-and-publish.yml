@@ -31,7 +31,11 @@ jobs:
     name: Publish NuGet Packages
     runs-on: ubuntu-latest
     needs: release
-    # if: ${{ needs.release.outputs.release_created == 'true' }}
+    # Publish ONLY when release-please actually cut a release. With this commented out, every push to
+    # main packed and ran `dotnet nuget push`, and the only thing standing between an accidental
+    # publish and NuGet.org was --skip-duplicate -- i.e. the version happening not to have changed.
+    # That is not a safety mechanism, it is a coincidence.
+    if: ${{ needs.release.outputs.release_created == 'true' }}
     permissions:
       contents: read
     env:

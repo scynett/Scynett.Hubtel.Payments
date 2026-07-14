@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
 using Scynett.Hubtel.Payments.Application.Common;
+using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Initiate;
 
@@ -40,12 +41,15 @@ internal static partial class InitiateReceiveMoneyLogMessages
         EventId = HubtelEventIds.DirectReceiveMoneyDecisionComputed,
         Level = LogLevel.Information,
         Message = "DirectReceiveMoney decision computed. ClientReference={ClientReference}, Code={Code}, Category={Category}, NextAction={NextAction}, IsFinal={IsFinal}")]
+    // Category/NextAction are taken as enums, not pre-stringified. Calling .ToString() at the call site
+    // evaluates eagerly even when the log level is disabled (CA1873); the LoggerMessage source generator
+    // formats the enum lazily instead.
     public static partial void DecisionComputed(
         ILogger logger,
         string clientReference,
         string code,
-        string category,
-        string nextAction,
+        ResponseCategory category,
+        NextAction nextAction,
         bool isFinal);
 
     [LoggerMessage(

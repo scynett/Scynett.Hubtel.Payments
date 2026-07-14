@@ -50,12 +50,19 @@ internal sealed class InitiateReceiveMoneyProcessor(
             activity?.SetTag("hubtel.clientReference", request.ClientReference);
             activity?.SetTag("hubtel.channel", request.Channel);
 
-            InitiateReceiveMoneyLogMessages.Initiating(
-                logger,
-                request.ClientReference,
-                request.Amount,
-                request.Channel,
-                MaskMsisdn(request.CustomerMobileNumber));
+            // MaskMsisdn allocates, so it must not run when the level is disabled (CA1873).
+            // The masked value is hoisted into a local so the argument itself is a cheap read.
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                var maskedMsisdn = MaskMsisdn(request.CustomerMobileNumber);
+
+                InitiateReceiveMoneyLogMessages.Initiating(
+                    logger,
+                    request.ClientReference,
+                    request.Amount,
+                    request.Channel,
+                    maskedMsisdn);
+            }
 
             // Determine which POS Sales ID to use
             var posSalesId = !string.IsNullOrWhiteSpace(directReceiveMoneyOptions.Value.PosSalesId)
@@ -96,8 +103,8 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 logger,
                 request.ClientReference,
                 decision.Code,
-                decision.Category.ToString(),
-                decision.NextAction.ToString(),
+                decision.Category,
+                decision.NextAction,
                 decision.IsFinal);
 
             // 5) Persist pending when waiting for callback
@@ -132,7 +139,40 @@ internal sealed class InitiateReceiveMoneyProcessor(
                 gatewayResponse,
                 decision);
 
-            // 7) Check if this is a failure scenario that should return failure
+            // 7a) Transport/unknown outcome: we do NOT know whether the customer was debited.
+            // This is a failure to *obtain an answer*, not a failed payment. The error is marked
+            // non-final + retryable and carries the HTTP status (when there was one) so the caller
+            // can verify via the Transaction Status API instead of telling the customer it failed.
+            if (!decision.IsSuccess
+                && !decision.IsFinal
+                && decision.Category is ResponseCategory.TransientError or ResponseCategory.Unknown)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, decision.DeveloperHint ?? gatewayResponse.Message);
+                InitiateReceiveMoneyLogMessages.GatewayFailed(
+                    logger,
+                    request.ClientReference,
+                    gatewayResponse.ResponseCode,
+                    gatewayResponse.Message ?? "No message provided");
+
+                var transientError = Error.Problem(
+                        $"DirectReceiveMoney.{decision.Category}",
+                        decision.CustomerMessage ?? gatewayResponse.Message ?? "The payment outcome is not yet known.")
+                    .WithProvider(gatewayResponse.ResponseCode, gatewayResponse.Message)
+                    .WithMetadata("isFinal", "false")
+                    .WithMetadata("shouldRetry", "true")
+                    .WithMetadata("nextAction", decision.NextAction.ToString());
+
+                if (gatewayResponse.HttpStatusCode is int httpStatus)
+                {
+                    transientError = transientError.WithMetadata(
+                        "httpStatusCode",
+                        httpStatus.ToString(CultureInfo.InvariantCulture));
+                }
+
+                return OperationResult<InitiateReceiveMoneyResult>.Failure(transientError);
+            }
+
+            // 7b) Check if this is a failure scenario that should return failure
             if (!decision.IsSuccess && decision.IsFinal)
             {
                 activity?.SetStatus(ActivityStatusCode.Error, decision.CustomerMessage ?? gatewayResponse.Message);

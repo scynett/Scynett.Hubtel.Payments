@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
 using Scynett.Hubtel.Payments.Application.Common;
+using Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 
 namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Callback;
 
@@ -18,12 +19,15 @@ internal static partial class ReceiveMoneyCallbackLogMessages
     [LoggerMessage(EventId = HubtelEventIds.DirectReceiveMoneyCallbackDecision,
         Level = LogLevel.Information,
         Message = "Hubtel callback decision. Code={Code}, Category={Category}, IsFinal={IsFinal}, NextAction={NextAction}")]
+    // Category/NextAction are taken as enums, not pre-stringified. Calling .ToString() at the call site
+    // evaluates eagerly even when the log level is disabled (CA1873); the LoggerMessage source generator
+    // formats the enum lazily instead.
     public static partial void CallbackDecision(
         ILogger logger,
         string code,
-        string category,
+        ResponseCategory category,
         bool isFinal,
-        string nextAction);
+        NextAction nextAction);
 
     [LoggerMessage(EventId = HubtelEventIds.DirectReceiveMoneyCallbackPendingRemoved,
         Level = LogLevel.Information,

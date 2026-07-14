@@ -16,11 +16,29 @@ internal sealed class RequestLoggingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        _logger.LogInformation(
-            "HTTP {Method} {Path}",
-            context.Request.Method,
-            context.Request.Path);
+        ArgumentNullException.ThrowIfNull(context);
+
+        // Guarded + hoisted: PathString.ToString() allocates, and must not run when the level is
+        // disabled (CA1873).
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            var method = context.Request.Method;
+            var path = context.Request.Path.ToString();
+
+            RequestLoggingLogMessages.HttpRequest(_logger, method, path);
+        }
 
         await _next(context).ConfigureAwait(false);
     }
+}
+
+internal static partial class RequestLoggingLogMessages
+{
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "HTTP {Method} {Path}")]
+    public static partial void HttpRequest(
+        ILogger logger,
+        string method,
+        string path);
 }

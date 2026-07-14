@@ -1,11 +1,46 @@
 ﻿namespace Scynett.Hubtel.Payments.Application.Features.DirectReceiveMoney.Decisions;
 
+/// <summary>
+/// Maps a Hubtel response code (and optional message) onto a <see cref="HandlingDecision"/>.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Behaviour change (SDK hardening):</b> a response code the SDK does not recognise, and the
+/// synthetic <c>HTTP_ERROR</c> code produced by the gateway on a transport/non-2xx failure, are no
+/// longer reported as <c>IsFinal: true</c>. "We could not read Hubtel's answer" is not the same as
+/// "the payment definitively failed": the customer may well have been debited. Both now resolve to
+/// a non-final decision (<c>IsFinal: false</c>, <c>ShouldRetry: true</c>,
+/// <see cref="NextAction.RetryLater"/>), meaning <b>go and verify via the Transaction Status API</b>.
+/// Previously these produced a self-contradictory <c>IsFinal: true, ShouldRetry: true</c> decision,
+/// which surfaced to callers as a FINAL FAILURE — the "customer paid, app says failed" bug class.
+/// </para>
+/// </remarks>
 public static class HubtelResponseDecisionFactory
 {
+    /// <summary>
+    /// Synthetic response code produced by the gateway when the call to Hubtel failed at the
+    /// transport level or returned a non-2xx HTTP status. It is never returned by Hubtel itself.
+    /// </summary>
+    public const string HttpErrorCode = "HTTP_ERROR";
+
     // Core code mapping (independent of message variants)
     private static readonly Dictionary<string, HandlingDecision> ByCode =
         new Dictionary<string, HandlingDecision>(StringComparer.OrdinalIgnoreCase)
         {
+            // Synthetic: the SDK could not obtain a usable answer from Hubtel (network error, 5xx, 4xx,
+            // empty body). The transaction state is UNKNOWN - it may still succeed. Never final.
+            [HttpErrorCode] = new HandlingDecision(
+                Code: HttpErrorCode,
+                Description: "The call to Hubtel failed at the transport level or returned a non-2xx HTTP status. The transaction state is unknown.",
+                NextAction: NextAction.RetryLater,
+                Category: ResponseCategory.TransientError,
+                IsSuccess: false,
+                IsFinal: false,
+                ShouldRetry: true,
+                CustomerMessage: "We are still confirming your payment. Please wait a moment.",
+                DeveloperHint: "Transport/HTTP failure. DO NOT mark the payment as failed. Verify with the Transaction Status API (status enquiry) before telling the customer anything final."
+            ),
+
             ["0000"] = new HandlingDecision(
                 Code: "0000",
                 Description: "The transaction has been processed successfully.",
@@ -94,6 +129,12 @@ public static class HubtelResponseDecisionFactory
     /// Main factory method. Provide the Hubtel response code and (optionally) the raw message/description.
     /// The message is used to refine 2001 cases into clearer customer guidance.
     /// </summary>
+    /// <remarks>
+    /// An unrecognised code yields <see cref="ResponseCategory.Unknown"/> with <c>IsFinal: false</c> and
+    /// <c>ShouldRetry: true</c> — "we do not know yet, go verify by status enquiry" — never
+    /// "definitively failed". Callers must not tell a customer the payment failed on the strength of an
+    /// unknown code.
+    /// </remarks>
     public static HandlingDecision Create(string? code, string? message = null)
     {
         code = (code ?? string.Empty).Trim();
@@ -103,14 +144,14 @@ public static class HubtelResponseDecisionFactory
         {
             return new HandlingDecision(
                 Code: string.IsNullOrWhiteSpace(code) ? "UNKNOWN" : code,
-                Description: "Unknown response code from Hubtel.",
+                Description: "Unknown response code from Hubtel. The transaction state is undetermined.",
                 NextAction: NextAction.RetryLater,
                 Category: ResponseCategory.Unknown,
                 IsSuccess: false,
-                IsFinal: true,
+                IsFinal: false,
                 ShouldRetry: true,
-                CustomerMessage: "We couldn’t complete the payment. Please try again.",
-                DeveloperHint: $"Unhandled Hubtel response code '{code}'. Capture and map it. Raw message: '{message ?? ""}'."
+                CustomerMessage: "We are still confirming your payment. Please wait a moment.",
+                DeveloperHint: $"Unhandled Hubtel response code '{code}'. Capture and map it. DO NOT treat as a failed payment - verify with the Transaction Status API. Raw message: '{message ?? ""}'."
             );
         }
 

@@ -82,9 +82,9 @@ public sealed class ReceiveMoneyCallbackProcessor(
             ReceiveMoneyCallbackLogMessages.CallbackDecision(
                 logger,
                 decision.Code,
-                decision.Category.ToString(),
+                decision.Category,
                 decision.IsFinal,
-                decision.NextAction.ToString());
+                decision.NextAction);
 
             if (decision.IsFinal)
             {

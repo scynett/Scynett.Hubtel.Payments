@@ -31,18 +31,24 @@ public sealed class InitiateReceiveMoneyCallbackRequestValidatorTests : UnitTest
         result.ShouldHaveValidationErrorFor(x => x.Data!.ClientReference);
     }
 
+    // Hubtel sends Amount: 0 on FAILURE callbacks. Rejecting those callbacks left the pending
+    // transaction unresolved and told Hubtel (via a 4xx) not to retry. Zero must validate.
     [Fact]
-    public void Validate_ShouldFail_WhenAmountIsMissing()
+    public void Validate_ShouldPass_WhenAmountIsZero_OnFailureCallback()
     {
-        var request = CreateRequest(CreateValidData() with { Amount = default });
+        var request = new ReceiveMoneyCallbackRequest(
+            "2001",
+            "Transaction Failed",
+            CreateValidData() with { Amount = 0m, Charges = 0m, AmountAfterCharges = 0m, AmountCharged = 0m });
 
         var result = _sut.TestValidate(request);
 
-        result.ShouldHaveValidationErrorFor(x => x.Data!.Amount);
+        result.ShouldNotHaveValidationErrorFor(x => x.Data!.Amount);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
-    public void Validate_ShouldFail_WhenAmountIsNotPositive()
+    public void Validate_ShouldFail_WhenAmountIsNegative()
     {
         var request = CreateRequest(CreateValidData() with { Amount = -5m });
 
@@ -76,7 +82,7 @@ public sealed class InitiateReceiveMoneyCallbackRequestValidatorTests : UnitTest
         {
             ClientReference = string.Empty,
             TransactionId = string.Empty,
-            Amount = 0m
+            Amount = -1m
         };
         var result = _sut.TestValidate(CreateRequest(data));
 
